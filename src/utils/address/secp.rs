@@ -1,27 +1,6 @@
 use crate::utils::address::{generate_rand_private_key, generate_secp_args_from_pk};
 
-use anyhow::Result;
-use ckb_jsonrpc_types::OutPoint;
-use ckb_sdk::{
-    constants::SIGHASH_TYPE_HASH,
-    rpc::CkbRpcClient,
-    traits::{
-        DefaultCellCollector, DefaultCellDepResolver, DefaultHeaderDepResolver,
-        DefaultTransactionDependencyProvider, SecpCkbRawKeySigner,
-    },
-    tx_builder::{
-        balance_tx_capacity, fill_placeholder_witnesses, omni_lock::OmniLockTransferBuilder,
-        unlock_tx, CapacityBalancer, TxBuilder,
-    },
-    types::NetworkType,
-    unlock::{
-        opentx::{assembler::assemble_new_tx, OpentxWitness},
-        IdentityFlag, MultisigConfig, OmniLockConfig, OmniLockScriptSigner, SecpSighashUnlocker,
-    },
-    unlock::{OmniLockUnlocker, OmniUnlockMode, ScriptUnlocker},
-    util::{blake160, keccak160},
-    Address, AddressPayload, HumanCapacity, ScriptGroup, ScriptId, SECP256K1,
-};
+use ckb_sdk::{constants::SIGHASH_TYPE_HASH, types::NetworkType, Address, AddressPayload};
 use ckb_types::{bytes::Bytes, core::ScriptHashType, packed, prelude::*, H256};
 
 pub(crate) fn generate_rand_secp_address_pk_pair() -> (Address, H256) {

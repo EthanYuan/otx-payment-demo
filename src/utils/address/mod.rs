@@ -1,12 +1,9 @@
 pub mod secp;
 
-use crate::const_definition::{SIGHASH_TYPE_HASH, SUDT_DEVNET_TYPE_HASH};
-
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use ckb_hash::blake2b_256;
-use ckb_types::{core::ScriptHashType, packed, prelude::*, H160, H256};
-use crypto::digest::Digest;
-use crypto::sha3::Sha3;
+use ckb_types::{H160, H256};
+
 use rand::Rng;
 
 use std::str::FromStr;

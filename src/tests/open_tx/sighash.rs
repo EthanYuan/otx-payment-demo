@@ -1,12 +1,8 @@
 use super::super::IntegrationTest;
-use crate::const_definition::{
-    CKB_URI, GENESIS_BUILT_IN_ADDRESS_1, GENESIS_BUILT_IN_ADDRESS_1_PRIVATE_KEY,
-};
+use crate::const_definition::CKB_URI;
 use crate::utils::address::secp::generate_rand_secp_address_pk_pair;
 use crate::utils::ckb_cli::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
-use crate::utils::instruction::{
-    aggregate_transactions_into_blocks, dump_data, generate_blocks, run_command_output,
-};
+use crate::utils::instruction::dump_data;
 
 use anyhow::{anyhow, Result};
 use ckb_crypto::secp::Pubkey;
@@ -25,14 +21,14 @@ use ckb_sdk::{
     },
     types::NetworkType,
     unlock::{
-        opentx::{assembler::assemble_new_tx, OpentxWitness},
-        IdentityFlag, MultisigConfig, OmniLockConfig, OmniLockScriptSigner, SecpSighashUnlocker,
+        opentx::OpentxWitness, IdentityFlag, MultisigConfig, OmniLockConfig, OmniLockScriptSigner,
+        SecpSighashUnlocker,
     },
     unlock::{OmniLockUnlocker, OmniUnlockMode, ScriptUnlocker},
     util::{blake160, keccak160},
     Address, AddressPayload, HumanCapacity, ScriptGroup, ScriptId, SECP256K1,
 };
-use ckb_types::core::capacity_bytes;
+
 use ckb_types::h256;
 use ckb_types::{
     bytes::Bytes,
@@ -41,17 +37,12 @@ use ckb_types::{
     prelude::*,
     H160, H256,
 };
-use clap::{Args, Parser, Subcommand};
+use clap::Args;
 use serde::{Deserialize, Serialize};
 
-use std::ffi::OsStr;
-use std::ops::Add;
-use std::panic;
-use std::process::{Child, Command, Output};
 use std::str::FromStr;
-use std::thread::sleep;
-use std::time::Duration;
-use std::{collections::HashMap, error::Error as StdErr, fs, path::Path, path::PathBuf};
+
+use std::{collections::HashMap, error::Error as StdErr, fs, path::PathBuf};
 
 const OPENTX_TX_HASH: H256 =
     h256!("0x3d47e848594fb551fd414b499044852515ce2e0685edf4d1ed7f5eeb4c7fdd81");
@@ -462,7 +453,7 @@ fn sign_open_tx(args: SignTxArgs, path: PathBuf) -> Result<TxInfo> {
 }
 
 fn sign_otx(
-    args: &SignTxArgs,
+    _args: &SignTxArgs,
     mut tx: TransactionView,
     omnilock_config: &OmniLockConfig,
     keys: Vec<secp256k1::SecretKey>,
