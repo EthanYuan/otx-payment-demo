@@ -44,9 +44,9 @@ use std::str::FromStr;
 
 use std::{collections::HashMap, error::Error as StdErr, fs, path::PathBuf};
 
-const OPENTX_TX_HASH: H256 =
+const OMNI_OPENTX_TX_HASH: H256 =
     h256!("0x3d47e848594fb551fd414b499044852515ce2e0685edf4d1ed7f5eeb4c7fdd81");
-const OPENTX_TX_IDX: usize = 9;
+const OMNI_OPENTX_TX_IDX: usize = 9;
 
 inventory::submit!(IntegrationTest {
     name: "test_sighash_open_transaction",
@@ -199,7 +199,7 @@ struct AddOutputArgs {
 
 fn build_omnilock_addr_from_secp(address: &Address) -> Result<Address, Box<dyn StdErr>> {
     let mut ckb_client = CkbRpcClient::new(CKB_URI);
-    let cell = build_omnilock_cell_dep(&mut ckb_client, &OPENTX_TX_HASH, OPENTX_TX_IDX)?;
+    let cell = build_omnilock_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
     let mut config = {
         let arg = H160::from_slice(&address.payload().args()).unwrap();
         OmniLockConfig::new_pubkey_hash(arg)
@@ -256,7 +256,7 @@ fn build_open_tx(
     args: &GenOpenTxArgs,
 ) -> Result<(TransactionView, OmniLockConfig), Box<dyn StdErr>> {
     let mut ckb_client = CkbRpcClient::new(CKB_URI);
-    let cell = build_omnilock_cell_dep(&mut ckb_client, &OPENTX_TX_HASH, OPENTX_TX_IDX)?;
+    let cell = build_omnilock_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
 
     let mut omnilock_config = if let Some(sender_key) = args.sender_key.as_ref() {
         let sender_key = secp256k1::SecretKey::from_slice(sender_key.as_bytes())
@@ -462,7 +462,7 @@ fn sign_otx(
     let tx_dep_provider = DefaultTransactionDependencyProvider::new(CKB_URI, 10);
 
     let mut ckb_client = CkbRpcClient::new(CKB_URI);
-    let cell = build_omnilock_cell_dep(&mut ckb_client, &OPENTX_TX_HASH, OPENTX_TX_IDX)?;
+    let cell = build_omnilock_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
 
     let mut _still_locked_groups = None;
     let unlockers = build_omnilock_unlockers(keys, omnilock_config.clone(), cell.type_hash);

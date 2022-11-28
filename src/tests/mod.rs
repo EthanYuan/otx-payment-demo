@@ -1,4 +1,5 @@
-pub mod open_tx;
+mod open_tx;
+mod user_case;
 
 #[derive(Debug)]
 pub struct IntegrationTest {
