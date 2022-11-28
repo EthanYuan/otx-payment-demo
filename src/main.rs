@@ -1,4 +1,5 @@
 pub mod const_definition;
+pub mod service;
 pub mod tests;
 pub mod utils;
 pub mod wallet;

@@ -1,9 +1,9 @@
 use super::super::IntegrationTest;
+use crate::service::OtxService;
 use crate::utils::address::omni::MultiSigArgs;
 use crate::utils::ckb_cli::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
 use crate::utils::instruction::dump_data;
-use crate::wallet::GenOpenTxArgs;
-use crate::wallet::Wallet;
+use crate::wallet::{GenOpenTxArgs, Wallet};
 
 use ckb_sdk::{unlock::IdentityFlag, HumanCapacity};
 
@@ -18,6 +18,10 @@ inventory::submit!(IntegrationTest {
 });
 fn z_aggregate_otxs_omni_lock() {
     let _alice_otx_file = alice_build_signed_otx().unwrap();
+    let _bob_otx_file = bob_build_signed_otx().unwrap();
+    let _carol_otx_file = carol_build_signed_otx().unwrap();
+
+    let _z_service = OtxService::new();
 }
 
 fn alice_build_signed_otx() -> Result<PathBuf> {
@@ -47,4 +51,16 @@ fn alice_build_signed_otx() -> Result<PathBuf> {
     let file = "./free-space/alice_otx_unsigned.json";
     dump_data(&open_tx, file).unwrap();
     Ok(file.into())
+}
+
+fn bob_build_signed_otx() -> Result<PathBuf> {
+    let _bob_wallet = Wallet::init_account();
+
+    // 2. transfer udt to bob's omni address
+
+    todo!()
+}
+
+fn carol_build_signed_otx() -> Result<PathBuf> {
+    todo!()
 }
