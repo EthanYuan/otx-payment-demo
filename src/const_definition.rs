@@ -30,5 +30,9 @@ pub const PW_LOCK_DEVNET_TYPE_HASH: H256 =
 pub const OMNI_LOCK_DEVNET_TYPE_HASH: H256 =
     h256!("0xbb4469004225b39e983929db71fe2253cba1d49a76223e9e1d212cdca1f79f28");
 
+pub const OMNI_OPENTX_TX_HASH: H256 =
+    h256!("0x3d47e848594fb551fd414b499044852515ce2e0685edf4d1ed7f5eeb4c7fdd81");
+pub const OMNI_OPENTX_TX_IDX: usize = 9;
+
 pub static UDT_1_HASH: OnceCell<H256> = OnceCell::new();
 pub static UDT_1_HOLDER_ACP_ADDRESS_PK: OnceCell<H256> = OnceCell::new();

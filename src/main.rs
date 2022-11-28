@@ -1,6 +1,7 @@
 pub mod const_definition;
 pub mod tests;
 pub mod utils;
+pub mod wallet;
 
 use clap::Parser;
 use tests::IntegrationTest;

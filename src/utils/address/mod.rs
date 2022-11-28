@@ -1,3 +1,4 @@
+pub mod omni;
 pub mod secp;
 
 use anyhow::Result;
