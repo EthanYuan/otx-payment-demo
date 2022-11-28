@@ -1,7 +1,6 @@
 use crate::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
 use crate::utils::address::omni::{
-    build_omnilock_addr_from_secp, AddInputArgs, AddOutputArgs, MultiSigArgs, OmniLockInfo,
-    SignTxArgs, TxInfo,
+    build_omnilock_addr_from_secp, MultiSigArgs, OmniLockInfo, SignTxArgs, TxInfo,
 };
 use crate::utils::address::secp::generate_rand_secp_address_pk_pair;
 
@@ -16,14 +15,12 @@ use ckb_sdk::{
         balance_tx_capacity, fill_placeholder_witnesses, omni_lock::OmniLockTransferBuilder,
         unlock_tx, CapacityBalancer, TxBuilder,
     },
-    types::NetworkType,
     unlock::{
         opentx::OpentxWitness, IdentityFlag, MultisigConfig, OmniLockConfig, OmniLockScriptSigner,
-        SecpSighashUnlocker,
     },
     unlock::{OmniLockUnlocker, OmniUnlockMode, ScriptUnlocker},
     util::{blake160, keccak160},
-    Address, AddressPayload, HumanCapacity, ScriptGroup, ScriptId, SECP256K1,
+    Address, HumanCapacity, ScriptGroup, ScriptId, SECP256K1,
 };
 
 use anyhow::{anyhow, Result};
@@ -32,14 +29,13 @@ use ckb_hash::blake2b_256;
 use ckb_jsonrpc_types as json_types;
 use ckb_types::{
     bytes::Bytes,
-    core::{BlockView, Capacity, ScriptHashType, TransactionView},
+    core::{BlockView, ScriptHashType, TransactionView},
     packed::{Byte32, CellDep, CellOutput, OutPoint, Script, Transaction, WitnessArgs},
     prelude::*,
     H160, H256,
 };
 
-use std::any;
-use std::{collections::HashMap, error::Error as StdErr, fs, path::PathBuf};
+use std::{collections::HashMap, fs, path::PathBuf};
 
 pub struct GenOpenTxArgs {
     pub omni_identity_flag: IdentityFlag,
@@ -58,18 +54,18 @@ pub struct GenOpenTxArgs {
 
 pub struct Wallet {
     pk: H256,
-    secp_address: Address,
+    _secp_address: Address,
     omni_otx_address: Address,
 }
 
 impl Wallet {
     pub fn init_account() -> Self {
-        let (secp_address, pk) = generate_rand_secp_address_pk_pair();
-        let omni_otx_address = build_omnilock_addr_from_secp(&secp_address).unwrap();
+        let (_secp_address, pk) = generate_rand_secp_address_pk_pair();
+        let omni_otx_address = build_omnilock_addr_from_secp(&_secp_address).unwrap();
 
         Wallet {
             pk,
-            secp_address,
+            _secp_address,
             omni_otx_address,
         }
     }

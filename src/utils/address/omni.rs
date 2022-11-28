@@ -1,46 +1,23 @@
 use crate::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
-use crate::utils::address::secp::generate_rand_secp_address_pk_pair;
-use crate::utils::ckb_cli::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
-use crate::utils::instruction::dump_data;
 
-use anyhow::{anyhow, Result};
-use ckb_crypto::secp::Pubkey;
-use ckb_hash::blake2b_256;
+use anyhow::Result;
+
 use ckb_jsonrpc_types as json_types;
 use ckb_sdk::{
-    constants::SIGHASH_TYPE_HASH,
-    rpc::CkbRpcClient,
-    traits::{
-        DefaultCellCollector, DefaultCellDepResolver, DefaultHeaderDepResolver,
-        DefaultTransactionDependencyProvider, SecpCkbRawKeySigner,
-    },
-    tx_builder::{
-        balance_tx_capacity, fill_placeholder_witnesses, omni_lock::OmniLockTransferBuilder,
-        unlock_tx, CapacityBalancer, TxBuilder,
-    },
-    types::NetworkType,
-    unlock::{
-        opentx::OpentxWitness, IdentityFlag, MultisigConfig, OmniLockConfig, OmniLockScriptSigner,
-        SecpSighashUnlocker,
-    },
-    unlock::{OmniLockUnlocker, OmniUnlockMode, ScriptUnlocker},
-    util::{blake160, keccak160},
-    Address, AddressPayload, HumanCapacity, ScriptGroup, ScriptId, SECP256K1,
+    rpc::CkbRpcClient, types::NetworkType, unlock::OmniLockConfig, Address, AddressPayload,
+    HumanCapacity, ScriptId,
 };
 
-use ckb_types::h256;
 use ckb_types::{
-    bytes::Bytes,
-    core::{BlockView, Capacity, ScriptHashType, TransactionView},
-    packed::{Byte32, CellDep, CellOutput, OutPoint, Script, Transaction, WitnessArgs},
+    core::ScriptHashType,
+    packed::{Byte32, CellDep, OutPoint, Script},
     prelude::*,
     H160, H256,
 };
-use clap::Args;
+
 use serde::{Deserialize, Serialize};
 
-use std::str::FromStr;
-use std::{collections::HashMap, error::Error as StdErr, fs, path::PathBuf};
+use std::error::Error as StdErr;
 
 pub struct OmniLockInfo {
     pub type_hash: H256,

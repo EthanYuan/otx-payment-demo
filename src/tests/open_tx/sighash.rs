@@ -61,7 +61,7 @@ fn test_sighash_open_transaction() {
     let tx_hash = ckb_cli_transfer_ckb(&alice_omni_address, 99).unwrap();
     println!("transfer tx hash: {:?}", tx_hash);
     let capacity = ckb_cli_get_capacity(&alice_omni_address).unwrap();
-    assert_eq!(99 as f64, capacity);
+    assert_eq!(99f64, capacity);
 
     // 3. alice generate open transaction, pay 1 CKB
     let gen_open_tx_args = GenOpenTxArgs {
@@ -92,7 +92,7 @@ fn test_sighash_open_transaction() {
     let tx_hash = ckb_cli_transfer_ckb(&z_address, 99).unwrap();
     println!("transfer tx hash: {:?}", tx_hash);
     let capacity = ckb_cli_get_capacity(&z_address).unwrap();
-    assert_eq!(99 as f64, capacity);
+    assert_eq!(99f64, capacity);
     let args = AddInputArgs { tx_hash, index: 0 };
     let open_tx = add_input(args, "./free-space/2_otx_signed.json".into()).unwrap();
     dump_data(&open_tx, "./free-space/3_otx_signed_add_input.json").unwrap();
@@ -537,7 +537,7 @@ fn add_output(args: AddOutputArgs, path: PathBuf) -> Result<TxInfo> {
 fn sign_tx(args: &SignTxArgs, path: PathBuf) -> Result<TxInfo> {
     let tx_info: TxInfo = serde_json::from_slice(&fs::read(&path)?)?;
     let tx = Transaction::from(tx_info.tx.inner).into_view();
-    let (tx, _) = sighash_sign(&args, tx)?;
+    let (tx, _) = sighash_sign(args, tx)?;
     let witness_args = WitnessArgs::from_slice(tx.witnesses().get(0).unwrap().raw_data().as_ref())?;
     let lock_field = witness_args.lock().to_opt().unwrap().raw_data();
     if lock_field != tx_info.omnilock_config.zero_lock(OmniUnlockMode::Normal)? {
