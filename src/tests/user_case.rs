@@ -1,13 +1,13 @@
 use super::super::IntegrationTest;
-use crate::service::OtxService;
-use crate::utils::address::omni::MultiSigArgs;
+use crate::const_definition::CKB_URI;
+use crate::service::{AddInputArgs, AddOutputArgs, OtxService};
 use crate::utils::ckb_cli::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
 use crate::utils::instruction::dump_data;
+use crate::utils::lock::omni::{MultiSigArgs, TxInfo};
 use crate::wallet::{GenOpenTxArgs, Wallet};
 
-use ckb_sdk::{unlock::IdentityFlag, HumanCapacity};
-
 use anyhow::Result;
+use ckb_sdk::{unlock::IdentityFlag, HumanCapacity};
 
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -17,14 +17,33 @@ inventory::submit!(IntegrationTest {
     test_fn: z_aggregate_otxs_omni_lock
 });
 fn z_aggregate_otxs_omni_lock() {
-    let _alice_otx_file = alice_build_signed_otx().unwrap();
-    let _bob_otx_file = bob_build_signed_otx().unwrap();
-    let _carol_otx_file = carol_build_signed_otx().unwrap();
+    let alice_otx = alice_build_signed_otx().unwrap();
+    // let _bob_otx_file = bob_build_signed_otx().unwrap();
+    // let _carol_otx_file = carol_build_signed_otx().unwrap();
 
-    let _z_service = OtxService::new();
+    let z_service = OtxService::new(vec![alice_otx], CKB_URI);
+    let tx_hash = ckb_cli_transfer_ckb(z_service.signer.get_secp_address(), 99).unwrap();
+
+    // builder in Z service build full tx
+    let open_tx = z_service.builder.merge_otxs().unwrap();
+    dump_data(&open_tx, "./free-space/usercase_otxs_merged.json").unwrap();
+    let input = AddInputArgs { tx_hash, index: 0 };
+    let output = AddOutputArgs {
+        capacity: (99_0000_0000 + 1_0000_0000 - 10_0000).into(),
+    };
+    let full_tx = z_service
+        .add_input_and_output(open_tx, input, output)
+        .unwrap();
+
+    // signer in Z service sign the full tx
+    let full_tx = z_service.signer.sign_tx(full_tx).unwrap();
+    dump_data(&full_tx, "./free-space/usercase_full_tx.json").unwrap();
+
+    // commiter in Z service send tx
+    z_service.committer.send_tx(full_tx).unwrap();
 }
 
-fn alice_build_signed_otx() -> Result<PathBuf> {
+fn alice_build_signed_otx() -> Result<TxInfo> {
     // 1. init Alice's wallet instance
     let alice_wallet = Wallet::init_account();
 
@@ -52,18 +71,14 @@ fn alice_build_signed_otx() -> Result<PathBuf> {
     dump_data(&open_tx, file).unwrap();
 
     // 4. alice sign the otx
-    let open_tx = alice_wallet.sign_open_tx(file.into()).unwrap();
-    let file = "./free-space/alice_otx_signed.json";
+    let open_tx = alice_wallet.sign_open_tx(open_tx).unwrap();
     dump_data(&open_tx, "./free-space/alice_otx_signed.json").unwrap();
 
-    Ok(file.into())
+    Ok(open_tx)
 }
 
 fn bob_build_signed_otx() -> Result<PathBuf> {
     let _bob_wallet = Wallet::init_account();
-
-    // 2. transfer udt to bob's omni address
-
     todo!()
 }
 

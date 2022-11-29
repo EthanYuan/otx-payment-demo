@@ -17,8 +17,6 @@ use ckb_types::{
 
 use serde::{Deserialize, Serialize};
 
-use std::error::Error as StdErr;
-
 pub struct OmniLockInfo {
     pub type_hash: H256,
     pub script_id: ScriptId,
@@ -42,7 +40,7 @@ pub struct TxInfo {
     pub omnilock_config: OmniLockConfig,
 }
 
-pub fn build_omnilock_addr_from_secp(address: &Address) -> Result<Address, Box<dyn StdErr>> {
+pub fn build_omnilock_addr_from_secp(address: &Address) -> Result<Address> {
     let mut ckb_client = CkbRpcClient::new(CKB_URI);
     let cell = build_omnilock_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
     let mut config = {
@@ -65,11 +63,11 @@ pub fn build_omnilock_addr_from_secp(address: &Address) -> Result<Address, Box<d
     Ok(address)
 }
 
-fn build_omnilock_cell_dep(
+pub fn build_omnilock_cell_dep(
     ckb_client: &mut CkbRpcClient,
     tx_hash: &H256,
     index: usize,
-) -> Result<OmniLockInfo, Box<dyn StdErr>> {
+) -> Result<OmniLockInfo> {
     let out_point_json = ckb_jsonrpc_types::OutPoint {
         tx_hash: tx_hash.clone(),
         index: ckb_jsonrpc_types::Uint32::from(index as u32),

@@ -1,4 +1,4 @@
-use crate::utils::address::{generate_rand_private_key, generate_secp_args_from_pk};
+use crate::utils::lock::{generate_rand_private_key, generate_secp_args_from_pk};
 
 use ckb_sdk::{constants::SIGHASH_TYPE_HASH, types::NetworkType, Address, AddressPayload};
 use ckb_types::{bytes::Bytes, core::ScriptHashType, packed, prelude::*, H256};

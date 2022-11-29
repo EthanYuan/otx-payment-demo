@@ -1,8 +1,8 @@
 use super::super::IntegrationTest;
 use crate::const_definition::CKB_URI;
-use crate::utils::address::secp::generate_rand_secp_address_pk_pair;
 use crate::utils::ckb_cli::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
 use crate::utils::instruction::dump_data;
+use crate::utils::lock::secp::generate_rand_secp_address_pk_pair;
 
 use anyhow::{anyhow, Result};
 use ckb_crypto::secp::Pubkey;
@@ -29,10 +29,10 @@ use ckb_sdk::{
     Address, AddressPayload, HumanCapacity, ScriptGroup, ScriptId, SECP256K1,
 };
 
-use ckb_types::h256;
 use ckb_types::{
     bytes::Bytes,
     core::{BlockView, Capacity, ScriptHashType, TransactionView},
+    h256,
     packed::{Byte32, CellDep, CellOutput, OutPoint, Script, Transaction, WitnessArgs},
     prelude::*,
     H160, H256,
@@ -41,7 +41,6 @@ use clap::Args;
 use serde::{Deserialize, Serialize};
 
 use std::str::FromStr;
-
 use std::{collections::HashMap, error::Error as StdErr, fs, path::PathBuf};
 
 const OMNI_OPENTX_TX_HASH: H256 =

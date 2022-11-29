@@ -1,8 +1,8 @@
 use crate::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
-use crate::utils::address::omni::{
-    build_omnilock_addr_from_secp, MultiSigArgs, OmniLockInfo, TxInfo,
+use crate::utils::lock::omni::{
+    build_omnilock_addr_from_secp, build_omnilock_cell_dep, MultiSigArgs, TxInfo,
 };
-use crate::utils::address::secp::generate_rand_secp_address_pk_pair;
+use crate::utils::lock::secp::generate_rand_secp_address_pk_pair;
 
 use ckb_sdk::{
     constants::SIGHASH_TYPE_HASH,
@@ -30,12 +30,12 @@ use ckb_jsonrpc_types as json_types;
 use ckb_types::{
     bytes::Bytes,
     core::{BlockView, ScriptHashType, TransactionView},
-    packed::{Byte32, CellDep, CellOutput, OutPoint, Script, Transaction, WitnessArgs},
+    packed::{CellDep, CellOutput, OutPoint, Script, Transaction, WitnessArgs},
     prelude::*,
     H160, H256,
 };
 
-use std::{collections::HashMap, fs, path::PathBuf};
+use std::collections::HashMap;
 
 pub struct GenOpenTxArgs {
     pub omni_identity_flag: IdentityFlag,
@@ -203,8 +203,7 @@ impl Wallet {
         Ok((tx, omnilock_config))
     }
 
-    pub fn sign_open_tx(&self, path: PathBuf) -> Result<TxInfo> {
-        let tx_info: TxInfo = serde_json::from_slice(&fs::read(&path)?)?;
+    pub fn sign_open_tx(&self, tx_info: TxInfo) -> Result<TxInfo> {
         let tx = Transaction::from(tx_info.tx.inner).into_view();
         let pks = vec![&self.pk];
         let keys: Vec<secp256k1::SecretKey> = pks
@@ -247,29 +246,6 @@ impl Wallet {
         };
         Ok(tx_info)
     }
-}
-
-fn build_omnilock_cell_dep(
-    ckb_client: &mut CkbRpcClient,
-    tx_hash: &H256,
-    index: usize,
-) -> Result<OmniLockInfo> {
-    let out_point_json = ckb_jsonrpc_types::OutPoint {
-        tx_hash: tx_hash.clone(),
-        index: ckb_jsonrpc_types::Uint32::from(index as u32),
-    };
-    let cell_status = ckb_client.get_live_cell(out_point_json, false)?;
-    let script = Script::from(cell_status.cell.unwrap().output.type_.unwrap());
-
-    let type_hash = script.calc_script_hash();
-    let out_point = OutPoint::new(Byte32::from_slice(tx_hash.as_bytes())?, index as u32);
-
-    let cell_dep = CellDep::new_builder().out_point(out_point).build();
-    Ok(OmniLockInfo {
-        type_hash: H256::from_slice(type_hash.as_slice())?,
-        script_id: ScriptId::new_type(type_hash.unpack()),
-        cell_dep,
-    })
 }
 
 fn build_omnilock_unlockers(
