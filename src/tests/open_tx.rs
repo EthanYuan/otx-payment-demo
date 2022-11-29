@@ -21,8 +21,8 @@ use ckb_sdk::{
     },
     types::NetworkType,
     unlock::{
-        opentx::OpentxWitness, IdentityFlag, MultisigConfig, OmniLockConfig, OmniLockScriptSigner,
-        SecpSighashUnlocker,
+        opentx::{assembler::assemble_new_tx, OpentxWitness},
+        IdentityFlag, MultisigConfig, OmniLockConfig, OmniLockScriptSigner, SecpSighashUnlocker,
     },
     unlock::{OmniLockUnlocker, OmniUnlockMode, ScriptUnlocker},
     util::{blake160, keccak160},
@@ -91,11 +91,11 @@ fn test_sighash_open_transaction() {
     .unwrap();
     dump_data(&open_tx, "./free-space/1_otx_sighash_signed.json").unwrap();
 
-    // 5. Add z input
-    let (z_address, z_address_pk) = generate_rand_secp_address_pk_pair();
-    let tx_hash = ckb_cli_transfer_ckb(&z_address, 99).unwrap();
+    // 5. Add input
+    let (payee_address, payee_pk) = generate_rand_secp_address_pk_pair();
+    let tx_hash = ckb_cli_transfer_ckb(&payee_address, 99).unwrap();
     println!("transfer tx hash: {:?}", tx_hash);
-    let capacity = ckb_cli_get_capacity(&z_address).unwrap();
+    let capacity = ckb_cli_get_capacity(&payee_address).unwrap();
     assert_eq!(99f64, capacity);
     let args = AddInputArgs { tx_hash, index: 0 };
     let open_tx = add_input(args, "./free-space/1_otx_sighash_signed.json".into()).unwrap();
@@ -103,7 +103,7 @@ fn test_sighash_open_transaction() {
 
     // 6. Add output
     let args = AddOutputArgs {
-        to_address: z_address,
+        to_address: payee_address,
         capacity: (99_0000_0000 + 1_0000_0000 - 10_0000).into(),
     };
     let open_tx = add_output(
@@ -119,7 +119,7 @@ fn test_sighash_open_transaction() {
 
     // 7. Sign the new input
     let args = &SignTxArgs {
-        sender_key: vec![z_address_pk],
+        sender_key: vec![payee_pk],
     };
     let tx = sign_tx(
         args,
@@ -176,9 +176,9 @@ fn test_ethereum_open_transaction() {
     .unwrap();
     dump_data(&open_tx, "./free-space/2_otx_ethereum_signed.json").unwrap();
 
-    // 5. Add z input
-    let (z_address, z_address_pk) = generate_rand_secp_address_pk_pair();
-    let tx_hash = ckb_cli_transfer_ckb(&z_address, 99).unwrap();
+    // 5. Add input
+    let (payee_address, payee_pk) = generate_rand_secp_address_pk_pair();
+    let tx_hash = ckb_cli_transfer_ckb(&payee_address, 99).unwrap();
     let args = AddInputArgs { tx_hash, index: 0 };
     let open_tx = add_input(args, "./free-space/2_otx_ethereum_signed.json".into()).unwrap();
     dump_data(
@@ -189,7 +189,7 @@ fn test_ethereum_open_transaction() {
 
     // 6. Add output
     let args = AddOutputArgs {
-        to_address: z_address,
+        to_address: payee_address,
         capacity: (99_0000_0000 + 1_0000_0000 - 10_0000).into(),
     };
     let open_tx = add_output(
@@ -205,7 +205,7 @@ fn test_ethereum_open_transaction() {
 
     // 7. Sign the new input
     let args = &SignTxArgs {
-        sender_key: vec![z_address_pk],
+        sender_key: vec![payee_pk],
     };
     let tx = sign_tx(
         args,
@@ -216,6 +216,94 @@ fn test_ethereum_open_transaction() {
 
     // 8. Send the tx
     let tx_hash = send_tx("./free-space/2_full_tx.json".into()).unwrap();
+    println!("tx_hash: {:?}", tx_hash);
+}
+
+inventory::submit!(IntegrationTest {
+    name: "test_merge_multiple_otxs",
+    test_fn: test_merge_multiple_otxs
+});
+fn test_merge_multiple_otxs() {
+    // 1. Build opentx 1
+    let (address, address_pk) = generate_rand_secp_address_pk_pair();
+    let omni_address = build_omnilock_addr_from_secp(&address).unwrap();
+    let _tx_hash = ckb_cli_transfer_ckb(&omni_address, 98).unwrap();
+    let gen_open_tx_args = GenOpenTxArgs {
+        sender_key: Some(address_pk.clone()),
+        ethereum_sender_key: None,
+        multis_args: MultiSigArgs {
+            require_first_n: 1,
+            threshold: 1,
+            sighash_address: vec![],
+        },
+        receiver: omni_address,
+        capacity: HumanCapacity::from_str("97.0").unwrap(),
+        open_capacity: HumanCapacity::from_str("1.0").unwrap(),
+        fee_rate: 0,
+    };
+    let open_tx = gen_open_tx(&gen_open_tx_args).unwrap();
+    dump_data(&open_tx, "./free-space/3_otx_sighash.json").unwrap();
+    let sign_otx_args = SignTxArgs {
+        sender_key: vec![address_pk],
+    };
+    let open_tx = sign_open_tx(sign_otx_args, "./free-space/3_otx_sighash.json".into()).unwrap();
+    dump_data(&open_tx, "./free-space/3_otx_sighash.json").unwrap();
+
+    // 2. Build opentx 2
+    let (_secp_address, pk) = generate_rand_secp_address_pk_pair();
+    let omni_address = build_omnilock_addr_flag_ethereum_from_pk(&pk).unwrap();
+    let _tx_hash = ckb_cli_transfer_ckb(&omni_address, 98).unwrap();
+    let gen_open_tx_args = GenOpenTxArgs {
+        sender_key: None,
+        ethereum_sender_key: Some(pk.clone()),
+        multis_args: MultiSigArgs {
+            require_first_n: 1,
+            threshold: 1,
+            sighash_address: vec![],
+        },
+        receiver: omni_address,
+        capacity: HumanCapacity::from_str("97.0").unwrap(),
+        open_capacity: HumanCapacity::from_str("1.0").unwrap(),
+        fee_rate: 0,
+    };
+    let open_tx = gen_open_tx(&gen_open_tx_args).unwrap();
+    dump_data(&open_tx, "./free-space/3_otx_ethereum.json").unwrap();
+    let sign_otx_args = SignTxArgs {
+        sender_key: vec![pk],
+    };
+    let open_tx = sign_open_tx(sign_otx_args, "./free-space/3_otx_ethereum.json".into()).unwrap();
+    dump_data(&open_tx, "./free-space/3_otx_ethereum.json").unwrap();
+
+    // 3 merge otxs
+    let args = MergeOpenTxArgs {
+        in_tx_file: vec![
+            "./free-space/3_otx_sighash.json".into(),
+            "./free-space/3_otx_ethereum.json".into(),
+        ],
+    };
+    let open_tx = merge_otxs(args).unwrap();
+    dump_data(&open_tx, "./free-space/3_full_tx.json").unwrap();
+
+    // 4 add input and output and sign
+    let (payee_address, payee_pk) = generate_rand_secp_address_pk_pair();
+    let tx_hash = ckb_cli_transfer_ckb(&payee_address, 99).unwrap();
+    let args = AddInputArgs { tx_hash, index: 0 };
+    let open_tx = add_input(args, "./free-space/3_full_tx.json".into()).unwrap();
+    dump_data(&open_tx, "./free-space/3_full_tx.json").unwrap();
+    let args = AddOutputArgs {
+        to_address: payee_address,
+        capacity: (99_0000_0000 + 2_0000_0000 - 10_0000).into(),
+    };
+    let open_tx = add_output(args, "./free-space/3_full_tx.json".into()).unwrap();
+    dump_data(&open_tx, "./free-space/3_full_tx.json").unwrap();
+    let args = &SignTxArgs {
+        sender_key: vec![payee_pk],
+    };
+    let tx = sign_tx(args, "./free-space/3_full_tx.json".into()).unwrap();
+    dump_data(&tx, "./free-space/3_full_tx.json").unwrap();
+
+    // 5. Send the tx
+    let tx_hash = send_tx("./free-space/3_full_tx.json".into()).unwrap();
     println!("tx_hash: {:?}", tx_hash);
 }
 
@@ -297,6 +385,13 @@ struct AddOutputArgs {
     /// The capacity to transfer (unit: CKB, example: 102.43)
     #[clap(long, value_name = "CKB")]
     capacity: HumanCapacity,
+}
+
+#[derive(Args)]
+struct MergeOpenTxArgs {
+    /// The output transaction info file (.json)
+    #[clap(long, value_name = "PATH")]
+    in_tx_file: Vec<PathBuf>,
 }
 
 fn build_omnilock_addr_from_secp(address: &Address) -> Result<Address, Box<dyn StdErr>> {
@@ -726,4 +821,29 @@ fn send_tx(path: PathBuf) -> Result<H256> {
     CkbRpcClient::new(CKB_URI)
         .send_transaction(tx_info.tx.inner, outputs_validator)
         .map_err(|e| anyhow!(e.to_string()))
+}
+
+fn merge_otxs(args: MergeOpenTxArgs) -> Result<TxInfo> {
+    let mut txes = vec![];
+    let mut omnilock_config = None;
+    for in_tx in &args.in_tx_file {
+        let tx_info: TxInfo = serde_json::from_slice(&fs::read(in_tx)?)?;
+        // println!("> tx: {}", serde_json::to_string_pretty(&tx_info.tx)?);
+        let tx = Transaction::from(tx_info.tx.inner).into_view();
+        txes.push(tx);
+        omnilock_config = Some(tx_info.omnilock_config);
+    }
+    if !txes.is_empty() {
+        let mut ckb_client = CkbRpcClient::new(CKB_URI);
+        let cell =
+            build_omnilock_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
+        let tx_dep_provider = DefaultTransactionDependencyProvider::new(CKB_URI, 10);
+        let tx = assemble_new_tx(txes, &tx_dep_provider, cell.type_hash.pack())?;
+        let tx_info = TxInfo {
+            tx: json_types::TransactionView::from(tx),
+            omnilock_config: omnilock_config.unwrap(),
+        };
+        return Ok(tx_info);
+    }
+    Err(anyhow!("merge otxs failed!"))
 }
