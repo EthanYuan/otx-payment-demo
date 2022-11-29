@@ -34,7 +34,7 @@ fn alice_build_signed_otx() -> Result<PathBuf> {
     let capacity = ckb_cli_get_capacity(alice_omni_address).unwrap();
     assert_eq!(151f64, capacity);
 
-    // 3. alice generate open transaction, pay 1 CKB
+    // 3. alice generate open transaction, pay 51 CKB
     let gen_open_tx_args = GenOpenTxArgs {
         omni_identity_flag: IdentityFlag::PubkeyHash,
         multis_args: MultiSigArgs {
@@ -50,6 +50,12 @@ fn alice_build_signed_otx() -> Result<PathBuf> {
     let open_tx = alice_wallet.gen_open_tx(&gen_open_tx_args).unwrap();
     let file = "./free-space/alice_otx_unsigned.json";
     dump_data(&open_tx, file).unwrap();
+
+    // 4. alice sign the otx
+    let open_tx = alice_wallet.sign_open_tx(file.into()).unwrap();
+    let file = "./free-space/alice_otx_signed.json";
+    dump_data(&open_tx, "./free-space/alice_otx_signed.json").unwrap();
+
     Ok(file.into())
 }
 

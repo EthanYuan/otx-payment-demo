@@ -1,6 +1,6 @@
 use crate::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
 use crate::utils::address::omni::{
-    build_omnilock_addr_from_secp, MultiSigArgs, OmniLockInfo, SignTxArgs, TxInfo,
+    build_omnilock_addr_from_secp, MultiSigArgs, OmniLockInfo, TxInfo,
 };
 use crate::utils::address::secp::generate_rand_secp_address_pk_pair;
 
@@ -202,6 +202,51 @@ impl Wallet {
         )?;
         Ok((tx, omnilock_config))
     }
+
+    pub fn sign_open_tx(&self, path: PathBuf) -> Result<TxInfo> {
+        let tx_info: TxInfo = serde_json::from_slice(&fs::read(&path)?)?;
+        let tx = Transaction::from(tx_info.tx.inner).into_view();
+        let pks = vec![&self.pk];
+        let keys: Vec<secp256k1::SecretKey> = pks
+            .iter()
+            .map(|sender_key| {
+                secp256k1::SecretKey::from_slice(sender_key.as_bytes())
+                    .map_err(|err| format!("invalid sender secret key: {}", err))
+                    .unwrap()
+            })
+            .collect();
+        if tx_info.omnilock_config.is_pubkey_hash() || tx_info.omnilock_config.is_ethereum() {
+            for (i, key) in keys.iter().enumerate() {
+                let pubkey = secp256k1::PublicKey::from_secret_key(&SECP256K1, key);
+                let hash160 = match tx_info.omnilock_config.id().flag() {
+                    IdentityFlag::PubkeyHash => {
+                        blake2b_256(&pubkey.serialize()[..])[0..20].to_vec()
+                    }
+                    IdentityFlag::Ethereum => {
+                        keccak160(Pubkey::from(pubkey).as_ref()).as_bytes().to_vec()
+                    }
+                    _ => unreachable!(),
+                };
+                if tx_info.omnilock_config.id().auth_content().as_bytes() != hash160 {
+                    return Err(anyhow!("key {:#x} is not in omnilock config", pks[i]));
+                }
+            }
+        }
+        let (tx, _) = sign_otx(tx, &tx_info.omnilock_config, keys)?;
+        let witness_args =
+            WitnessArgs::from_slice(tx.witnesses().get(0).unwrap().raw_data().as_ref())?;
+        let lock_field = witness_args.lock().to_opt().unwrap().raw_data();
+        if lock_field != tx_info.omnilock_config.zero_lock(OmniUnlockMode::Normal)? {
+            println!("> transaction has been signed!");
+        } else {
+            println!("failed to sign tx");
+        }
+        let tx_info = TxInfo {
+            tx: json_types::TransactionView::from(tx),
+            omnilock_config: tx_info.omnilock_config,
+        };
+        Ok(tx_info)
+    }
 }
 
 fn build_omnilock_cell_dep(
@@ -274,53 +319,7 @@ fn build_multisig_config(
     )?)
 }
 
-pub fn sign_open_tx(args: SignTxArgs, path: PathBuf) -> Result<TxInfo> {
-    let tx_info: TxInfo = serde_json::from_slice(&fs::read(&path)?)?;
-    let tx = Transaction::from(tx_info.tx.inner).into_view();
-    let keys: Vec<secp256k1::SecretKey> = args
-        .sender_key
-        .iter()
-        .map(|sender_key| {
-            secp256k1::SecretKey::from_slice(sender_key.as_bytes())
-                .map_err(|err| format!("invalid sender secret key: {}", err))
-                .unwrap()
-        })
-        .collect();
-    if tx_info.omnilock_config.is_pubkey_hash() || tx_info.omnilock_config.is_ethereum() {
-        for (i, key) in keys.iter().enumerate() {
-            let pubkey = secp256k1::PublicKey::from_secret_key(&SECP256K1, key);
-            let hash160 = match tx_info.omnilock_config.id().flag() {
-                IdentityFlag::PubkeyHash => blake2b_256(&pubkey.serialize()[..])[0..20].to_vec(),
-                IdentityFlag::Ethereum => {
-                    keccak160(Pubkey::from(pubkey).as_ref()).as_bytes().to_vec()
-                }
-                _ => unreachable!(),
-            };
-            if tx_info.omnilock_config.id().auth_content().as_bytes() != hash160 {
-                return Err(anyhow!(
-                    "key {:#x} is not in omnilock config",
-                    args.sender_key[i]
-                ));
-            }
-        }
-    }
-    let (tx, _) = sign_otx(&args, tx, &tx_info.omnilock_config, keys)?;
-    let witness_args = WitnessArgs::from_slice(tx.witnesses().get(0).unwrap().raw_data().as_ref())?;
-    let lock_field = witness_args.lock().to_opt().unwrap().raw_data();
-    if lock_field != tx_info.omnilock_config.zero_lock(OmniUnlockMode::Normal)? {
-        println!("> transaction has been signed!");
-    } else {
-        println!("failed to sign tx");
-    }
-    let tx_info = TxInfo {
-        tx: json_types::TransactionView::from(tx),
-        omnilock_config: tx_info.omnilock_config,
-    };
-    Ok(tx_info)
-}
-
 fn sign_otx(
-    _args: &SignTxArgs,
     mut tx: TransactionView,
     omnilock_config: &OmniLockConfig,
     keys: Vec<secp256k1::SecretKey>,

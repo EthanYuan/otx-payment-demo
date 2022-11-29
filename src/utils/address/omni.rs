@@ -4,8 +4,7 @@ use anyhow::Result;
 
 use ckb_jsonrpc_types as json_types;
 use ckb_sdk::{
-    rpc::CkbRpcClient, types::NetworkType, unlock::OmniLockConfig, Address, AddressPayload,
-    HumanCapacity, ScriptId,
+    rpc::CkbRpcClient, types::NetworkType, unlock::OmniLockConfig, Address, AddressPayload, ScriptId,
 };
 
 use ckb_types::{
@@ -40,25 +39,6 @@ pub struct MultiSigArgs {
 pub struct TxInfo {
     pub tx: json_types::TransactionView,
     pub omnilock_config: OmniLockConfig,
-}
-
-pub struct SignTxArgs {
-    /// The sender private key (hex string)
-    pub sender_key: Vec<H256>,
-}
-
-pub struct AddInputArgs {
-    /// omnilock script deploy transaction hash
-    pub tx_hash: H256,
-
-    /// cell index of omnilock script deploy transaction's outputs
-    pub index: usize,
-}
-
-pub struct AddOutputArgs {
-    pub to_address: Address,
-    /// The capacity to transfer (unit: CKB, example: 102.43)
-    pub capacity: HumanCapacity,
 }
 
 pub fn build_omnilock_addr_from_secp(address: &Address) -> Result<Address, Box<dyn StdErr>> {
