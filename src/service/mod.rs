@@ -1,26 +1,18 @@
+use ckb_sdk::{Address, HumanCapacity};
 
-
-
-
-
-use ckb_sdk::{
-    Address,
-    HumanCapacity,
-};
-
-use ckb_types::{
-    H256,
-};
-
-
-
-
+use ckb_types::H256;
 
 pub struct OtxService {}
 
 impl OtxService {
     pub fn new() -> Self {
         OtxService {}
+    }
+}
+
+impl Default for OtxService {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -37,5 +29,3 @@ pub struct AddOutputArgs {
     /// The capacity to transfer (unit: CKB, example: 102.43)
     pub capacity: HumanCapacity,
 }
-
-

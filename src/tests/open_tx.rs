@@ -53,39 +53,43 @@ inventory::submit!(IntegrationTest {
     test_fn: test_sighash_open_transaction
 });
 fn test_sighash_open_transaction() {
-    // 1. Build alice opentx address
-    let (alice_address, alice_address_pk) = generate_rand_secp_address_pk_pair();
-    let alice_omni_address = build_omnilock_addr_from_secp(&alice_address).unwrap();
+    // 1. Build opentx address
+    let (address, address_pk) = generate_rand_secp_address_pk_pair();
+    let omni_address = build_omnilock_addr_from_secp(&address).unwrap();
 
-    // 2. Transfer capacity to alice omni address
-    let tx_hash = ckb_cli_transfer_ckb(&alice_omni_address, 99).unwrap();
+    // 2. Transfer capacity to omni address
+    let tx_hash = ckb_cli_transfer_ckb(&omni_address, 99).unwrap();
     println!("transfer tx hash: {:?}", tx_hash);
-    let capacity = ckb_cli_get_capacity(&alice_omni_address).unwrap();
+    let capacity = ckb_cli_get_capacity(&omni_address).unwrap();
     assert_eq!(99f64, capacity);
 
-    // 3. alice generate open transaction, pay 1 CKB
+    // 3. Generate open transaction, pay 1 CKB
     let gen_open_tx_args = GenOpenTxArgs {
-        sender_key: Some(alice_address_pk.clone()),
+        sender_key: Some(address_pk.clone()),
         ethereum_sender_key: None,
         multis_args: MultiSigArgs {
             require_first_n: 1,
             threshold: 1,
             sighash_address: vec![],
         },
-        receiver: alice_omni_address,
+        receiver: omni_address,
         capacity: HumanCapacity::from_str("98.0").unwrap(),
         open_capacity: HumanCapacity::from_str("1.0").unwrap(),
         fee_rate: 0,
     };
     let open_tx = gen_open_tx(&gen_open_tx_args).unwrap();
-    dump_data(&open_tx, "./free-space/1_otx_unsigned.json").unwrap();
+    dump_data(&open_tx, "./free-space/1_otx_sighash_unsigned.json").unwrap();
 
     // 4. Sign open transaction
     let sign_otx_args = SignTxArgs {
-        sender_key: vec![alice_address_pk],
+        sender_key: vec![address_pk],
     };
-    let open_tx = sign_open_tx(sign_otx_args, "./free-space/1_otx_unsigned.json".into()).unwrap();
-    dump_data(&open_tx, "./free-space/2_otx_signed.json").unwrap();
+    let open_tx = sign_open_tx(
+        sign_otx_args,
+        "./free-space/1_otx_sighash_unsigned.json".into(),
+    )
+    .unwrap();
+    dump_data(&open_tx, "./free-space/1_otx_sighash_signed.json").unwrap();
 
     // 5. Add z input
     let (z_address, z_address_pk) = generate_rand_secp_address_pk_pair();
@@ -94,26 +98,124 @@ fn test_sighash_open_transaction() {
     let capacity = ckb_cli_get_capacity(&z_address).unwrap();
     assert_eq!(99f64, capacity);
     let args = AddInputArgs { tx_hash, index: 0 };
-    let open_tx = add_input(args, "./free-space/2_otx_signed.json".into()).unwrap();
-    dump_data(&open_tx, "./free-space/3_otx_signed_add_input.json").unwrap();
+    let open_tx = add_input(args, "./free-space/1_otx_sighash_signed.json".into()).unwrap();
+    dump_data(&open_tx, "./free-space/1_otx_sighash_signed_add_input.json").unwrap();
 
     // 6. Add output
     let args = AddOutputArgs {
         to_address: z_address,
         capacity: (99_0000_0000 + 1_0000_0000 - 10_0000).into(),
     };
-    let open_tx = add_output(args, "./free-space/3_otx_signed_add_input.json".into()).unwrap();
-    dump_data(&open_tx, "./free-space/4_otx_signed_add_output.json").unwrap();
+    let open_tx = add_output(
+        args,
+        "./free-space/1_otx_sighash_signed_add_input.json".into(),
+    )
+    .unwrap();
+    dump_data(
+        &open_tx,
+        "./free-space/1_otx_sighash_signed_add_output.json",
+    )
+    .unwrap();
 
     // 7. Sign the new input
     let args = &SignTxArgs {
         sender_key: vec![z_address_pk],
     };
-    let tx = sign_tx(args, "./free-space/4_otx_signed_add_output.json".into()).unwrap();
-    dump_data(&tx, "./free-space/5_tx.json").unwrap();
+    let tx = sign_tx(
+        args,
+        "./free-space/1_otx_sighash_signed_add_output.json".into(),
+    )
+    .unwrap();
+    dump_data(&tx, "./free-space/1_full_tx.json").unwrap();
 
     // 8. Send the tx
-    let tx_hash = send_tx("./free-space/5_tx.json".into()).unwrap();
+    let tx_hash = send_tx("./free-space/1_full_tx.json".into()).unwrap();
+    println!("tx_hash: {:?}", tx_hash);
+}
+
+inventory::submit!(IntegrationTest {
+    name: "test_ethereum_open_transaction",
+    test_fn: test_ethereum_open_transaction
+});
+fn test_ethereum_open_transaction() {
+    // 1. Build opentx address
+    let (_secp_address, pk) = generate_rand_secp_address_pk_pair();
+    let omni_address = build_omnilock_addr_flag_ethereum_from_pk(&pk).unwrap();
+
+    // 2. Transfer capacity to omni address
+    let tx_hash = ckb_cli_transfer_ckb(&omni_address, 99).unwrap();
+    println!("transfer tx hash: {:?}", tx_hash);
+    let capacity = ckb_cli_get_capacity(&omni_address).unwrap();
+    assert_eq!(99f64, capacity);
+
+    // 3. Generate open transaction, pay 1 CKB
+    let gen_open_tx_args = GenOpenTxArgs {
+        sender_key: None,
+        ethereum_sender_key: Some(pk.clone()),
+        multis_args: MultiSigArgs {
+            require_first_n: 1,
+            threshold: 1,
+            sighash_address: vec![],
+        },
+        receiver: omni_address,
+        capacity: HumanCapacity::from_str("98.0").unwrap(),
+        open_capacity: HumanCapacity::from_str("1.0").unwrap(),
+        fee_rate: 0,
+    };
+    let open_tx = gen_open_tx(&gen_open_tx_args).unwrap();
+    dump_data(&open_tx, "./free-space/2_otx_ethereum_unsigned.json").unwrap();
+
+    // 4. Sign open transaction
+    let sign_otx_args = SignTxArgs {
+        sender_key: vec![pk],
+    };
+    let open_tx = sign_open_tx(
+        sign_otx_args,
+        "./free-space/2_otx_ethereum_unsigned.json".into(),
+    )
+    .unwrap();
+    dump_data(&open_tx, "./free-space/2_otx_ethereum_signed.json").unwrap();
+
+    // 5. Add z input
+    let (z_address, z_address_pk) = generate_rand_secp_address_pk_pair();
+    let tx_hash = ckb_cli_transfer_ckb(&z_address, 99).unwrap();
+    let args = AddInputArgs { tx_hash, index: 0 };
+    let open_tx = add_input(args, "./free-space/2_otx_ethereum_signed.json".into()).unwrap();
+    dump_data(
+        &open_tx,
+        "./free-space/2_otx_ethereum_signed_add_input.json",
+    )
+    .unwrap();
+
+    // 6. Add output
+    let args = AddOutputArgs {
+        to_address: z_address,
+        capacity: (99_0000_0000 + 1_0000_0000 - 10_0000).into(),
+    };
+    let open_tx = add_output(
+        args,
+        "./free-space/2_otx_ethereum_signed_add_input.json".into(),
+    )
+    .unwrap();
+    dump_data(
+        &open_tx,
+        "./free-space/2_otx_ethereum_signed_add_output.json",
+    )
+    .unwrap();
+
+    // 7. Sign the new input
+    let args = &SignTxArgs {
+        sender_key: vec![z_address_pk],
+    };
+    let tx = sign_tx(
+        args,
+        "./free-space/2_otx_ethereum_signed_add_output.json".into(),
+    )
+    .unwrap();
+    dump_data(&tx, "./free-space/2_full_tx.json").unwrap();
+
+    // 8. Send the tx
+    let tx_hash = send_tx("./free-space/2_full_tx.json".into()).unwrap();
     println!("tx_hash: {:?}", tx_hash);
 }
 
@@ -203,6 +305,33 @@ fn build_omnilock_addr_from_secp(address: &Address) -> Result<Address, Box<dyn S
     let mut config = {
         let arg = H160::from_slice(&address.payload().args()).unwrap();
         OmniLockConfig::new_pubkey_hash(arg)
+    };
+    config.set_opentx_mode();
+    let address_payload = {
+        let args = config.build_args();
+        AddressPayload::new_full(ScriptHashType::Type, cell.type_hash.pack(), args)
+    };
+    let lock_script = Script::from(&address_payload);
+    let address = Address::new(NetworkType::Testnet, address_payload.clone(), true);
+    let resp = serde_json::json!({
+        "testnet": address.to_string(),
+        "lock-arg": format!("0x{}", hex_string(address_payload.args().as_ref())),
+        "lock-hash": format!("{:#x}", lock_script.calc_script_hash())
+    });
+    println!("{}", serde_json::to_string_pretty(&resp)?);
+    Ok(address)
+}
+
+fn build_omnilock_addr_flag_ethereum_from_pk(pk: &H256) -> Result<Address, Box<dyn StdErr>> {
+    let mut ckb_client = CkbRpcClient::new(CKB_URI);
+    let cell = build_omnilock_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
+    let mut config = {
+        let privkey = secp256k1::SecretKey::from_slice(pk.as_bytes()).unwrap();
+        let pubkey = secp256k1::PublicKey::from_secret_key(&SECP256K1, &privkey);
+        // println!("pubkey:{:?}", hex_string(&pubkey.serialize()));
+        // println!("pubkey:{:?}", hex_string(&pubkey.serialize_uncompressed()));
+        let addr = keccak160(Pubkey::from(pubkey).as_ref());
+        OmniLockConfig::new_ethereum(addr)
     };
     config.set_opentx_mode();
     let address_payload = {

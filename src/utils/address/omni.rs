@@ -4,7 +4,8 @@ use anyhow::Result;
 
 use ckb_jsonrpc_types as json_types;
 use ckb_sdk::{
-    rpc::CkbRpcClient, types::NetworkType, unlock::OmniLockConfig, Address, AddressPayload, ScriptId,
+    rpc::CkbRpcClient, types::NetworkType, unlock::OmniLockConfig, Address, AddressPayload,
+    ScriptId,
 };
 
 use ckb_types::{
