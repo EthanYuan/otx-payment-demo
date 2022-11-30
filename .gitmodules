@@ -1,0 +1,7 @@
+[submodule "mercury"]
+	path = mercury
+	url = https://github.com/EthanYuan/mercury.git
+
+[submodule "ckb-sdk-rust"]
+	path = ckb-sdk-rust
+	url = https://github.com/EthanYuan/ckb-sdk-rust.git
