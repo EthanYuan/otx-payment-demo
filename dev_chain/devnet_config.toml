@@ -63,7 +63,7 @@ cell_dep = '''
     "dep_type": "dep_group",
     "out_point": {
         "index": "0x0",
-        "tx_hash": "0x1e8d1f444c259098055811df0558e18a4658b34f66cdc17059546ee6b1123404"
+        "tx_hash": "0x38866e40e78c6ef2cac456d7b19089b6388c7a43baf6b24fe33ea3c4f916591c"
     }
 }
 '''
@@ -83,7 +83,7 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x2",
-        "tx_hash": "0x3d47e848594fb551fd414b499044852515ce2e0685edf4d1ed7f5eeb4c7fdd81"
+        "tx_hash": "0x1d0cfff7d47d4c2981b35e13f2ecc8832a2cc32d88c4e7c0257cf99edf5860a0"
     }
 }
 '''
@@ -103,7 +103,7 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x7",
-        "tx_hash": "0x3d47e848594fb551fd414b499044852515ce2e0685edf4d1ed7f5eeb4c7fdd81"
+        "tx_hash": "0x1d0cfff7d47d4c2981b35e13f2ecc8832a2cc32d88c4e7c0257cf99edf5860a0"
     }
 }
 '''
@@ -123,7 +123,7 @@ cell_dep = '''
     "dep_type": "dep_group",
     "out_point": {
         "index": "0x2",
-        "tx_hash": "0x1e8d1f444c259098055811df0558e18a4658b34f66cdc17059546ee6b1123404"
+        "tx_hash": "0x38866e40e78c6ef2cac456d7b19089b6388c7a43baf6b24fe33ea3c4f916591c"
     }
 }
 '''
@@ -143,7 +143,7 @@ cell_dep = '''
     "dep_type": "dep_group",
     "out_point": {
         "index": "0x3",
-        "tx_hash": "0x1e8d1f444c259098055811df0558e18a4658b34f66cdc17059546ee6b1123404"
+        "tx_hash": "0x38866e40e78c6ef2cac456d7b19089b6388c7a43baf6b24fe33ea3c4f916591c"
     }
 }
 '''
@@ -163,7 +163,7 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x8",
-        "tx_hash": "0x3d47e848594fb551fd414b499044852515ce2e0685edf4d1ed7f5eeb4c7fdd81"
+        "tx_hash": "0x1d0cfff7d47d4c2981b35e13f2ecc8832a2cc32d88c4e7c0257cf99edf5860a0"
     }
 }
 '''
@@ -182,7 +182,7 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x9",
-        "tx_hash": "0x3d47e848594fb551fd414b499044852515ce2e0685edf4d1ed7f5eeb4c7fdd81"
+        "tx_hash": "0x1d0cfff7d47d4c2981b35e13f2ecc8832a2cc32d88c4e7c0257cf99edf5860a0"
     }
 }
 '''

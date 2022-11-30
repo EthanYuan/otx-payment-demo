@@ -1,5 +1,5 @@
 use super::super::IntegrationTest;
-use crate::const_definition::CKB_URI;
+use crate::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
 use crate::utils::ckb_cli::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
 use crate::utils::instruction::dump_data;
 use crate::utils::lock::secp::generate_rand_secp_address_pk_pair;
@@ -32,7 +32,6 @@ use ckb_sdk::{
 use ckb_types::{
     bytes::Bytes,
     core::{BlockView, Capacity, ScriptHashType, TransactionView},
-    h256,
     packed::{Byte32, CellDep, CellOutput, OutPoint, Script, Transaction, WitnessArgs},
     prelude::*,
     H160, H256,
@@ -42,10 +41,6 @@ use serde::{Deserialize, Serialize};
 
 use std::str::FromStr;
 use std::{collections::HashMap, error::Error as StdErr, fs, path::PathBuf};
-
-const OMNI_OPENTX_TX_HASH: H256 =
-    h256!("0x3d47e848594fb551fd414b499044852515ce2e0685edf4d1ed7f5eeb4c7fdd81");
-const OMNI_OPENTX_TX_IDX: usize = 9;
 
 inventory::submit!(IntegrationTest {
     name: "test_sighash_open_transaction",
