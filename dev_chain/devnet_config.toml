@@ -63,7 +63,7 @@ cell_dep = '''
     "dep_type": "dep_group",
     "out_point": {
         "index": "0x0",
-        "tx_hash": "0x38866e40e78c6ef2cac456d7b19089b6388c7a43baf6b24fe33ea3c4f916591c"
+        "tx_hash": "0x9c6cff38bf3dbfe28d57035973f0dd1ab60bddac46549e5fc50d2a46e7c0c5f5"
     }
 }
 '''
@@ -83,7 +83,7 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x2",
-        "tx_hash": "0x1d0cfff7d47d4c2981b35e13f2ecc8832a2cc32d88c4e7c0257cf99edf5860a0"
+        "tx_hash": "0x8592d17f7d574cf51b744d66fe9e14a09b915ecaf7ff40450d270c8b2a7a1372"
     }
 }
 '''
@@ -103,7 +103,7 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x7",
-        "tx_hash": "0x1d0cfff7d47d4c2981b35e13f2ecc8832a2cc32d88c4e7c0257cf99edf5860a0"
+        "tx_hash": "0x8592d17f7d574cf51b744d66fe9e14a09b915ecaf7ff40450d270c8b2a7a1372"
     }
 }
 '''
@@ -123,7 +123,7 @@ cell_dep = '''
     "dep_type": "dep_group",
     "out_point": {
         "index": "0x2",
-        "tx_hash": "0x38866e40e78c6ef2cac456d7b19089b6388c7a43baf6b24fe33ea3c4f916591c"
+        "tx_hash": "0x9c6cff38bf3dbfe28d57035973f0dd1ab60bddac46549e5fc50d2a46e7c0c5f5"
     }
 }
 '''
@@ -143,7 +143,7 @@ cell_dep = '''
     "dep_type": "dep_group",
     "out_point": {
         "index": "0x3",
-        "tx_hash": "0x38866e40e78c6ef2cac456d7b19089b6388c7a43baf6b24fe33ea3c4f916591c"
+        "tx_hash": "0x9c6cff38bf3dbfe28d57035973f0dd1ab60bddac46549e5fc50d2a46e7c0c5f5"
     }
 }
 '''
@@ -163,7 +163,7 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x8",
-        "tx_hash": "0x1d0cfff7d47d4c2981b35e13f2ecc8832a2cc32d88c4e7c0257cf99edf5860a0"
+        "tx_hash": "0x8592d17f7d574cf51b744d66fe9e14a09b915ecaf7ff40450d270c8b2a7a1372"
     }
 }
 '''
@@ -182,7 +182,26 @@ cell_dep = '''
     "dep_type": "code",
     "out_point": {
         "index": "0x9",
-        "tx_hash": "0x1d0cfff7d47d4c2981b35e13f2ecc8832a2cc32d88c4e7c0257cf99edf5860a0"
+        "tx_hash": "0x8592d17f7d574cf51b744d66fe9e14a09b915ecaf7ff40450d270c8b2a7a1372"
+    }
+}
+'''
+
+[[extension_scripts]]
+script_name = "xudt_rce"
+script = '''
+{
+    "args": "0x",
+    "code_hash": "0x73e5467341b55ffd7bdeb5b6f32aa0e9433baf6808f8c5f2472dbc36b1ab04f7",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "code",
+    "out_point": {
+        "index": "0x10",
+        "tx_hash": "0x8592d17f7d574cf51b744d66fe9e14a09b915ecaf7ff40450d270c8b2a7a1372"
     }
 }
 '''

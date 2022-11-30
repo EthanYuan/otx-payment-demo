@@ -104,29 +104,35 @@ If you need to deploy contract scripts on the dev chain, you need to do the foll
     The following code is the algorithm to calculate the code hash in the above config:
 
     ```rust
-    use ckb_types::core::ScriptHashType;
-    use ckb_types::prelude::*;
-    use std::str::FromStr;
+    #[cfg(test)]
+    mod tests {
+        use ckb_types::core::ScriptHashType;
+        use ckb_types::packed;
+        use ckb_types::prelude::*;
+        use ckb_types::H256;
 
-    fn caculate_type_hash(code_hash: &str, args: &str, script_hash_type: ScriptHashType) -> H256 {
-        let code_hash = H256::from_str(code_hash).unwrap();
-        let args = H256::from_str(args).unwrap();
-        let script = packed::Script::new_builder()
-            .hash_type(script_hash_type.into())
-            .code_hash(code_hash.pack())
-            .args(ckb_types::bytes::Bytes::from(args.as_bytes().to_owned()).pack())
-            .build();
-        script.calc_script_hash().unpack()
-    }
+        use std::str::FromStr;
 
-    #[tokio::test]
-    async fn test_caculate_lock_hash() {
-        let code_hash = "00000000000000000000000000000000000000000000000000545950455f4944";
-        let args = "d0e6998c64e5e3ac7f04f1c05cc41c5c36af05db696333a762d4f1ef2f407468";
-        let script_hash_type = ScriptHashType::Type;
+        fn caculate_type_hash(code_hash: &str, args: &str, script_hash_type: ScriptHashType) -> H256 {
+            let code_hash = H256::from_str(code_hash).unwrap();
+            let args = H256::from_str(args).unwrap();
+            let script = packed::Script::new_builder()
+                .hash_type(script_hash_type.into())
+                .code_hash(code_hash.pack())
+                .args(ckb_types::bytes::Bytes::from(args.as_bytes().to_owned()).pack())
+                .build();
+            script.calc_script_hash().unpack()
+        }
 
-        let script_hash = caculate_type_hash(code_hash, args, script_hash_type);
-        println!("{:?}", script_hash.to_string());
+        #[test]
+        fn test_caculate_script_hash() {
+            let code_hash = "00000000000000000000000000000000000000000000000000545950455f4944";
+            let args = "02df593065ff5d52c90aabf799433cfcbf0147fc2f7b649688026d4d4ec62d5e";
+            let script_hash_type = ScriptHashType::Type;
+
+            let script_hash = caculate_type_hash(code_hash, args, script_hash_type);
+            println!("{:?}", script_hash.to_string());
+        }
     }
     ```
 

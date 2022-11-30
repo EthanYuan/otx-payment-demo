@@ -122,7 +122,8 @@ pub(crate) fn generate_blocks(number: usize) -> Result<()> {
 }
 
 pub fn aggregate_transactions_into_blocks() -> Result<()> {
-    generate_blocks(4)
+    generate_blocks(3)?;
+    generate_blocks(3)
 }
 
 pub fn send_transaction_to_ckb(tx: Transaction) -> Result<H256> {

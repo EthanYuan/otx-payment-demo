@@ -54,6 +54,10 @@ capacity = 100_444_0000_0000
 file = { file = "cells/omni_lock" }
 create_type_id = true
 capacity = 200_555_0000_0000
+[[genesis.system_cells]]
+file = { file = "cells/xudt_rce" }
+create_type_id = true
+capacity = 100_555_0000_0000
 
 [genesis.system_cells_lock]
 code_hash = "0x0000000000000000000000000000000000000000000000000000000000000000"
