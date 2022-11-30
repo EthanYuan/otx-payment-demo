@@ -1,11 +1,23 @@
+pub mod mercury;
+
 use crate::const_definition::{
-    CELL_BASE_MATURE_EPOCH, CKB_URI, GENESIS_EPOCH_LENGTH, RPC_TRY_COUNT, RPC_TRY_INTERVAL_SECS,
+    ANYONE_CAN_PAY_DEVNET_TYPE_HASH, CELL_BASE_MATURE_EPOCH, CHEQUE_DEVNET_TYPE_HASH, CKB_URI,
+    DAO_DEVNET_TYPE_HASH, GENESIS_EPOCH_LENGTH, MERCURY_URI, PW_LOCK_DEVNET_TYPE_HASH,
+    RPC_TRY_COUNT, RPC_TRY_INTERVAL_SECS, SIGHASH_TYPE_HASH, SUDT_DEVNET_TYPE_HASH,
 };
+
+use crate::utils::mercury_client::MercuryRpcClient;
 use crate::utils::rpc_client::CkbRpcClient;
 
 use anyhow::{anyhow, Result};
 use ckb_jsonrpc_types::{OutputsValidator, Transaction};
+
 use ckb_types::H256;
+use common::lazy::{
+    ACP_CODE_HASH, CHEQUE_CODE_HASH, DAO_CODE_HASH, PW_LOCK_CODE_HASH, SECP256K1_CODE_HASH,
+    SUDT_CODE_HASH,
+};
+
 use serde::Serialize;
 
 use std::ffi::OsStr;
@@ -66,7 +78,58 @@ where
 pub(crate) fn setup() -> Vec<Child> {
     println!("Setup test environment...");
     let ckb = start_ckb_node();
-    vec![ckb]
+    let (ckb, mercury) = start_mercury(ckb);
+    vec![ckb, mercury]
+}
+
+pub(crate) fn start_mercury(ckb: Child) -> (Child, Child) {
+    let mercury = run_command_spawn(
+        "cargo",
+        vec![
+            "run",
+            "--manifest-path",
+            "mercury/Cargo.toml",
+            "--",
+            "-c",
+            "dev_chain/devnet_config.toml",
+            "run",
+        ],
+    );
+    let mercury = if let Ok(mercury) = mercury {
+        mercury
+    } else {
+        teardown(vec![ckb]);
+        panic!("start mercury");
+    };
+    let mercury_client = MercuryRpcClient::new(MERCURY_URI.to_string());
+    for _try in 0..=RPC_TRY_COUNT {
+        let resp = mercury_client.get_mercury_info();
+        if resp.is_ok() {
+            let mercury_client = MercuryRpcClient::new(MERCURY_URI.to_string());
+            mercury_client.wait_sync();
+
+            // This step is used to make mercury enter the normal serial sync loop state
+            // only then can all initialization be completed
+            if generate_blocks(1).is_err() {
+                teardown(vec![ckb, mercury]);
+                panic!("generate block when start mercury");
+            }
+
+            // init built-in script code hash
+            let _ = SECP256K1_CODE_HASH.set(SIGHASH_TYPE_HASH);
+            let _ = SUDT_CODE_HASH.set(SUDT_DEVNET_TYPE_HASH);
+            let _ = ACP_CODE_HASH.set(ANYONE_CAN_PAY_DEVNET_TYPE_HASH);
+            let _ = CHEQUE_CODE_HASH.set(CHEQUE_DEVNET_TYPE_HASH);
+            let _ = DAO_CODE_HASH.set(DAO_DEVNET_TYPE_HASH);
+            let _ = PW_LOCK_CODE_HASH.set(PW_LOCK_DEVNET_TYPE_HASH);
+
+            return (ckb, mercury);
+        } else {
+            sleep(Duration::from_secs(RPC_TRY_INTERVAL_SECS))
+        }
+    }
+    teardown(vec![ckb, mercury]);
+    panic!("Setup test environment failed");
 }
 
 pub(crate) fn teardown(childs: Vec<Child>) {

@@ -1,3 +1,4 @@
+use ckb_sdk::Address;
 use ckb_types::{h256, H256};
 use once_cell::sync::OnceCell;
 
@@ -35,4 +36,5 @@ pub const OMNI_OPENTX_TX_HASH: H256 =
 pub const OMNI_OPENTX_TX_IDX: usize = 9;
 
 pub static UDT_1_HASH: OnceCell<H256> = OnceCell::new();
+pub static UDT_1_HOLDER_ACP_ADDRESS: OnceCell<Address> = OnceCell::new();
 pub static UDT_1_HOLDER_ACP_ADDRESS_PK: OnceCell<H256> = OnceCell::new();

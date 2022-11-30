@@ -205,3 +205,22 @@ cell_dep = '''
     }
 }
 '''
+
+[[extension_scripts]]
+script_name = "xudt_rce"
+script = '''
+{
+    "args": "0x",
+    "code_hash": "0x73e5467341b55ffd7bdeb5b6f32aa0e9433baf6808f8c5f2472dbc36b1ab04f7",
+    "hash_type": "type"
+}
+'''
+cell_dep = '''
+{
+    "dep_type": "code",
+    "out_point": {
+        "index": "0x10",
+        "tx_hash": "0x8592d17f7d574cf51b744d66fe9e14a09b915ecaf7ff40450d270c8b2a7a1372"
+    }
+}
+'''
