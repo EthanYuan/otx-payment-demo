@@ -6,8 +6,8 @@ use crate::const_definition::{
     RPC_TRY_COUNT, RPC_TRY_INTERVAL_SECS, SIGHASH_TYPE_HASH, SUDT_DEVNET_TYPE_HASH,
 };
 
-use crate::utils::mercury_client::MercuryRpcClient;
-use crate::utils::rpc_client::CkbRpcClient;
+use crate::utils::ckb_rpc_client::CkbRpcClient;
+use crate::utils::mercury_client_rpc::MercuryRpcClient;
 
 use anyhow::{anyhow, Result};
 use ckb_jsonrpc_types::{OutputsValidator, Transaction};

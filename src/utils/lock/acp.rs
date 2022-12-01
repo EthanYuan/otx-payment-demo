@@ -11,7 +11,7 @@ pub fn build_acp_address(secp_address: &Address) -> Result<Address> {
     let payload = AddressPayload::new_full(
         ScriptHashType::Type,
         acp_code_hash,
-        secp_script.args().as_bytes().to_owned(),
+        secp_script.args().as_bytes(),
     );
     Ok(Address::new(NetworkType::Dev, payload, true))
 }

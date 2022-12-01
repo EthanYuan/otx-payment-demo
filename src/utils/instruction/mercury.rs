@@ -7,7 +7,7 @@ use crate::const_definition::{
 use crate::utils::lock::acp::build_acp_address;
 use crate::utils::lock::get_udt_hash_by_owner;
 use crate::utils::lock::secp::prepare_secp_address_with_ckb_capacity;
-use crate::utils::mercury_client::MercuryRpcClient;
+use crate::utils::mercury_client_rpc::MercuryRpcClient;
 
 use crate::utils::signer::sign_transaction;
 
@@ -28,7 +28,7 @@ pub(crate) fn issue_udt_1() -> Result<()> {
 
     // issue udt
     let (owner_address, owner_address_pk, _) =
-        prepare_secp_address_with_ckb_capacity(500_0000_0000)?;
+        prepare_secp_address_with_ckb_capacity(5000_0000_0000_0000)?;
     let udt_hash = get_udt_hash_by_owner(&owner_address)?;
     let _tx_hash = issue_udt_with_acp(&owner_address, &owner_address_pk, 20_000_000_000u128)?;
     let mercury_client = MercuryRpcClient::new(MERCURY_URI.to_string());
