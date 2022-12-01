@@ -186,7 +186,10 @@ pub(crate) fn generate_blocks(number: usize) -> Result<()> {
 
 pub fn aggregate_transactions_into_blocks() -> Result<()> {
     generate_blocks(3)?;
-    generate_blocks(3)
+    generate_blocks(3)?;
+    let mercury_client = MercuryRpcClient::new(MERCURY_URI.to_string());
+    mercury_client.wait_sync();
+    Ok(())
 }
 
 pub fn send_transaction_to_ckb(tx: Transaction) -> Result<H256> {

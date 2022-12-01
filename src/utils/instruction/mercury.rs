@@ -31,8 +31,6 @@ pub(crate) fn issue_udt_1() -> Result<()> {
         prepare_secp_address_with_ckb_capacity(5000_0000_0000_0000)?;
     let udt_hash = get_udt_hash_by_owner(&owner_address)?;
     let _tx_hash = issue_udt_with_acp(&owner_address, &owner_address_pk, 20_000_000_000u128)?;
-    let mercury_client = MercuryRpcClient::new(MERCURY_URI.to_string());
-    mercury_client.wait_sync();
     let acp_address = build_acp_address(&owner_address)?;
 
     UDT_1_HASH.set(udt_hash).expect("init UDT_HASH_1");
@@ -64,7 +62,6 @@ pub(crate) fn prepare_ckb_capacity(address: &Address, capacity: u64) -> Result<O
 
     // send tx to ckb node
     let tx_hash = send_transaction_to_ckb(tx)?;
-    mercury_client.wait_sync();
     let tx_info = mercury_client
         .get_transaction_info(tx_hash)?
         .transaction

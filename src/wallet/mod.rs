@@ -1,6 +1,6 @@
 use crate::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
 use crate::utils::lock::omni::{
-    build_omnilock_addr_from_secp, build_omnilock_cell_dep, MultiSigArgs, TxInfo,
+    build_cell_dep, build_otx_omnilock_addr_from_secp, MultiSigArgs, TxInfo,
 };
 use crate::utils::lock::secp::generate_rand_secp_address_pk_pair;
 
@@ -46,9 +46,11 @@ pub struct GenOpenTxArgs {
     pub receiver: Address,
 
     /// The capacity to transfer (unit: CKB, example: 102.43)
-    pub capacity: HumanCapacity,
     /// The open transaction capacity not decided to whom (unit: CKB, example: 102.43)
-    pub open_capacity: HumanCapacity,
+    pub capacity_with_open: Option<(HumanCapacity, HumanCapacity)>,
+
+    pub udt_amount_with_open: Option<(u64, u64)>,
+
     pub fee_rate: u64,
 }
 
@@ -61,7 +63,7 @@ pub struct Wallet {
 impl Wallet {
     pub fn init_account() -> Self {
         let (_secp_address, pk) = generate_rand_secp_address_pk_pair();
-        let omni_otx_address = build_omnilock_addr_from_secp(&_secp_address).unwrap();
+        let omni_otx_address = build_otx_omnilock_addr_from_secp(&_secp_address).unwrap();
 
         Wallet {
             pk,
@@ -85,8 +87,8 @@ impl Wallet {
 
     fn build_open_tx(&self, args: &GenOpenTxArgs) -> Result<(TransactionView, OmniLockConfig)> {
         let mut ckb_client = CkbRpcClient::new(CKB_URI);
-        let cell =
-            build_omnilock_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
+        let omni_lock_info =
+            build_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
 
         let mut omnilock_config = match args.omni_identity_flag {
             IdentityFlag::PubkeyHash => {
@@ -124,7 +126,7 @@ impl Wallet {
         omnilock_config.set_opentx_mode();
         // Build CapacityBalancer
         let sender = Script::new_builder()
-            .code_hash(cell.type_hash.pack())
+            .code_hash(omni_lock_info.type_hash.pack())
             .hash_type(ScriptHashType::Type.into())
             .args(omnilock_config.build_args().pack())
             .build();
@@ -141,21 +143,31 @@ impl Wallet {
         let genesis_block = ckb_client.get_block_by_number(0.into())?.unwrap();
         let genesis_block = BlockView::from(genesis_block);
         let mut cell_dep_resolver = DefaultCellDepResolver::from_genesis(&genesis_block)?;
-        cell_dep_resolver.insert(cell.script_id, cell.cell_dep, "Omni Lock".to_string());
+        cell_dep_resolver.insert(
+            omni_lock_info.script_id,
+            omni_lock_info.cell_dep,
+            "Omni Lock".to_string(),
+        );
         let header_dep_resolver = DefaultHeaderDepResolver::new(CKB_URI);
         let mut cell_collector = DefaultCellCollector::new(CKB_URI);
         let tx_dep_provider = DefaultTransactionDependencyProvider::new(CKB_URI, 10);
 
         // Build base transaction
-        let unlockers =
-            build_omnilock_unlockers(Vec::new(), omnilock_config.clone(), cell.type_hash);
+        let unlockers = build_omnilock_unlockers(
+            Vec::new(),
+            omnilock_config.clone(),
+            omni_lock_info.type_hash,
+        );
+
+        let (capacity, open_capacity) = args.capacity_with_open.unwrap();
+
         let output = CellOutput::new_builder()
             .lock(sender.clone())
-            .capacity(args.capacity.0.pack())
+            .capacity(capacity.0.pack())
             .build();
 
         let builder = OmniLockTransferBuilder::new_open(
-            args.open_capacity,
+            open_capacity,
             vec![(output, Bytes::default())],
             omnilock_config.clone(),
             None,
@@ -304,7 +316,7 @@ fn sign_otx(
     let tx_dep_provider = DefaultTransactionDependencyProvider::new(CKB_URI, 10);
 
     let mut ckb_client = CkbRpcClient::new(CKB_URI);
-    let cell = build_omnilock_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
+    let cell = build_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
 
     let mut _still_locked_groups = None;
     let unlockers = build_omnilock_unlockers(keys, omnilock_config.clone(), cell.type_hash);

@@ -29,7 +29,7 @@ fn test_issue_udt() {
     let response = mercury_client.get_balance(payload).unwrap();
     assert_eq!(response.balances.len(), 2);
     assert_eq!(0u128, response.balances[0].free.into());
-    assert_eq!(146_0000_0000u128, response.balances[0].occupied.into());
+    assert_eq!(142_0000_0000u128, response.balances[0].occupied.into());
     assert_eq!(0u128, response.balances[0].frozen.into());
     assert_eq!(200_0000_0000u128, response.balances[1].free.into());
 }

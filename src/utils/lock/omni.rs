@@ -17,7 +17,7 @@ use ckb_types::{
 
 use serde::{Deserialize, Serialize};
 
-pub struct OmniLockInfo {
+pub struct ScriptInfo {
     pub type_hash: H256,
     pub script_id: ScriptId,
     pub cell_dep: CellDep,
@@ -40,9 +40,9 @@ pub struct TxInfo {
     pub omnilock_config: OmniLockConfig,
 }
 
-pub fn build_omnilock_addr_from_secp(address: &Address) -> Result<Address> {
+pub fn build_otx_omnilock_addr_from_secp(address: &Address) -> Result<Address> {
     let mut ckb_client = CkbRpcClient::new(CKB_URI);
-    let cell = build_omnilock_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
+    let cell = build_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
     let mut config = {
         let arg = H160::from_slice(&address.payload().args()).unwrap();
         OmniLockConfig::new_pubkey_hash(arg)
@@ -63,11 +63,11 @@ pub fn build_omnilock_addr_from_secp(address: &Address) -> Result<Address> {
     Ok(address)
 }
 
-pub fn build_omnilock_cell_dep(
+pub fn build_cell_dep(
     ckb_client: &mut CkbRpcClient,
     tx_hash: &H256,
     index: usize,
-) -> Result<OmniLockInfo> {
+) -> Result<ScriptInfo> {
     let out_point_json = ckb_jsonrpc_types::OutPoint {
         tx_hash: tx_hash.clone(),
         index: ckb_jsonrpc_types::Uint32::from(index as u32),
@@ -79,7 +79,7 @@ pub fn build_omnilock_cell_dep(
     let out_point = OutPoint::new(Byte32::from_slice(tx_hash.as_bytes())?, index as u32);
 
     let cell_dep = CellDep::new_builder().out_point(out_point).build();
-    Ok(OmniLockInfo {
+    Ok(ScriptInfo {
         type_hash: H256::from_slice(type_hash.as_slice())?,
         script_id: ScriptId::new_type(type_hash.unpack()),
         cell_dep,

@@ -35,6 +35,10 @@ pub const OMNI_OPENTX_TX_HASH: H256 =
     h256!("0x8592d17f7d574cf51b744d66fe9e14a09b915ecaf7ff40450d270c8b2a7a1372");
 pub const OMNI_OPENTX_TX_IDX: usize = 9;
 
+pub const XUDT_TX_HASH: H256 =
+    h256!("0x8592d17f7d574cf51b744d66fe9e14a09b915ecaf7ff40450d270c8b2a7a1372");
+pub const XUDT_TX_IDX: usize = 10;
+
 pub static UDT_1_HASH: OnceCell<H256> = OnceCell::new();
 pub static UDT_1_HOLDER_ACP_ADDRESS: OnceCell<Address> = OnceCell::new();
 pub static UDT_1_HOLDER_ACP_ADDRESS_PK: OnceCell<H256> = OnceCell::new();

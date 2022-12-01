@@ -1,6 +1,6 @@
 use crate::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
 use crate::utils::build_tx::{add_input, add_output, sighash_sign};
-use crate::utils::lock::omni::{build_omnilock_cell_dep, TxInfo};
+use crate::utils::lock::omni::{build_cell_dep, TxInfo};
 use crate::utils::lock::secp::generate_rand_secp_address_pk_pair;
 
 use ckb_sdk::{
@@ -118,8 +118,7 @@ impl OtxBuilder {
         }
         if !txes.is_empty() {
             let mut ckb_client = CkbRpcClient::new(CKB_URI);
-            let cell =
-                build_omnilock_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
+            let cell = build_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
             let tx_dep_provider = DefaultTransactionDependencyProvider::new(CKB_URI, 10);
             let tx = assemble_new_tx(txes, &tx_dep_provider, cell.type_hash.pack())?;
             let tx_info = TxInfo {
