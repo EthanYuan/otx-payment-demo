@@ -1,4 +1,4 @@
-mod open_tx;
+mod sdk_open_tx_examples;
 mod transfer_udt;
 mod user_case;
 #[derive(Debug)]

@@ -56,10 +56,10 @@ impl Committer {
         }
     }
 
-    pub fn send_tx(&self, tx_info: TxInfo) -> Result<H256> {
+    pub fn send_tx(&self, tx: json_types::TransactionView) -> Result<H256> {
         let outputs_validator = Some(json_types::OutputsValidator::Passthrough);
         CkbRpcClient::new(&self.ckb_uri)
-            .send_transaction(tx_info.tx.inner, outputs_validator)
+            .send_transaction(tx.inner, outputs_validator)
             .map_err(|e| anyhow!(e.to_string()))
     }
 }
@@ -79,7 +79,7 @@ impl Signer {
         &self.secp_address
     }
 
-    pub fn sign_tx(&self, tx_info: TxInfo) -> Result<TxInfo> {
+    pub fn sign_tx(&self, tx_info: TxInfo) -> Result<json_types::TransactionView> {
         let tx = Transaction::from(tx_info.tx.inner).into_view();
         let (tx, _) = sighash_sign(&[self.pk.clone()], tx)?;
         let witness_args =
@@ -90,11 +90,7 @@ impl Signer {
         } else {
             println!("failed to sign tx");
         }
-        let tx_info = TxInfo {
-            tx: json_types::TransactionView::from(tx),
-            omnilock_config: tx_info.omnilock_config,
-        };
-        Ok(tx_info)
+        Ok(json_types::TransactionView::from(tx))
     }
 }
 

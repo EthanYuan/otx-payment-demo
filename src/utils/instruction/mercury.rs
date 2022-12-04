@@ -2,7 +2,7 @@ use super::send_transaction_to_ckb;
 
 use crate::const_definition::{
     GENESIS_BUILT_IN_ADDRESS_1, GENESIS_BUILT_IN_ADDRESS_1_PRIVATE_KEY, MERCURY_URI, UDT_1_HASH,
-    UDT_1_HOLDER_ACP_ADDRESS, UDT_1_HOLDER_ACP_ADDRESS_PK,
+    UDT_1_HOLDER_ACP_ADDRESS, UDT_1_HOLDER_PK, UDT_1_HOLDER_SECP_ADDRESS,
 };
 use crate::utils::lock::acp::build_acp_address;
 use crate::utils::lock::get_udt_hash_by_owner;
@@ -34,10 +34,13 @@ pub(crate) fn issue_udt_1() -> Result<()> {
     let acp_address = build_acp_address(&owner_address)?;
 
     UDT_1_HASH.set(udt_hash).expect("init UDT_HASH_1");
+    UDT_1_HOLDER_SECP_ADDRESS
+        .set(owner_address)
+        .expect("init UDT_1_HOLDER_ACP_ADDRESS");
     UDT_1_HOLDER_ACP_ADDRESS
         .set(acp_address)
         .expect("init UDT_1_HOLDER_ACP_ADDRESS");
-    UDT_1_HOLDER_ACP_ADDRESS_PK
+    UDT_1_HOLDER_PK
         .set(owner_address_pk)
         .expect("init UDT_1_HOLDER_ACP_ADDRESS_PK");
     Ok(())

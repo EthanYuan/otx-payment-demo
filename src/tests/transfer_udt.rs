@@ -1,6 +1,6 @@
 use super::IntegrationTest;
 use crate::const_definition::MERCURY_URI;
-use crate::const_definition::{UDT_1_HASH, UDT_1_HOLDER_ACP_ADDRESS, UDT_1_HOLDER_ACP_ADDRESS_PK};
+use crate::const_definition::{UDT_1_HASH, UDT_1_HOLDER_ACP_ADDRESS, UDT_1_HOLDER_PK};
 use crate::utils::instruction::mercury::issue_udt_1;
 use crate::utils::mercury_client_rpc::MercuryRpcClient;
 
@@ -17,7 +17,7 @@ fn test_issue_udt() {
     issue_udt_1().unwrap();
     let _udt_hash = UDT_1_HASH.get().unwrap();
     let acp_address_with_udt = UDT_1_HOLDER_ACP_ADDRESS.get().unwrap();
-    let _acp_address_pk = UDT_1_HOLDER_ACP_ADDRESS_PK.get().unwrap();
+    let _acp_address_pk = UDT_1_HOLDER_PK.get().unwrap();
 
     let payload = GetBalancePayload {
         item: JsonItem::Address(acp_address_with_udt.to_string()),
