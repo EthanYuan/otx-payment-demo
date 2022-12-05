@@ -1,4 +1,7 @@
-use crate::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
+use crate::const_definition::{
+    CKB_URI, OMNI_LOCK_DEVNET_TYPE_HASH, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX,
+    SECP_DATA_TX_HASH, SECP_DATA_TX_IDX, XUDT_TX_HASH, XUDT_TX_IDX,
+};
 use crate::utils::lock::omni::{
     build_cell_dep, build_otx_omnilock_addr_from_secp, MultiSigArgs, TxInfo,
 };
@@ -30,7 +33,10 @@ use ckb_jsonrpc_types as json_types;
 use ckb_types::{
     bytes::Bytes,
     core::{BlockView, ScriptHashType, TransactionView},
-    packed::{CellDep, CellOutput, OutPoint, Script, Transaction, WitnessArgs},
+    packed::{
+        self, Byte32, CellDep, CellInputBuilder, CellOutput, OutPoint, Script, Transaction,
+        WitnessArgs,
+    },
     prelude::*,
     H160, H256,
 };
@@ -56,18 +62,18 @@ pub struct GenOpenTxArgs {
 
 pub struct Wallet {
     pk: H256,
-    _secp_address: Address,
+    secp_address: Address,
     omni_otx_address: Address,
 }
 
 impl Wallet {
     pub fn init_account() -> Self {
-        let (_secp_address, pk) = generate_rand_secp_address_pk_pair();
-        let omni_otx_address = build_otx_omnilock_addr_from_secp(&_secp_address).unwrap();
+        let (secp_address, pk) = generate_rand_secp_address_pk_pair();
+        let omni_otx_address = build_otx_omnilock_addr_from_secp(&secp_address).unwrap();
 
         Wallet {
             pk,
-            _secp_address,
+            secp_address,
             omni_otx_address,
         }
     }
@@ -90,40 +96,9 @@ impl Wallet {
         let omni_lock_info =
             build_cell_dep(&mut ckb_client, &OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX)?;
 
-        let mut omnilock_config = match args.omni_identity_flag {
-            IdentityFlag::PubkeyHash => {
-                let sender_key = secp256k1::SecretKey::from_slice(self.pk.as_bytes())
-                    .map_err(|err| anyhow!("invalid sender secret key: {}", err))?;
-                let pubkey = secp256k1::PublicKey::from_secret_key(&SECP256K1, &sender_key);
-                let pubkey_hash = blake160(&pubkey.serialize());
-                OmniLockConfig::new_pubkey_hash(pubkey_hash)
-            }
-            IdentityFlag::Ethereum => {
-                let sender_key = secp256k1::SecretKey::from_slice(self.pk.as_bytes())
-                    .map_err(|err| anyhow!("invalid sender secret key: {}", err))?;
-                let pubkey = secp256k1::PublicKey::from_secret_key(&SECP256K1, &sender_key);
-                println!("pubkey:{:?}", hex_string(&pubkey.serialize()));
-                println!("pubkey:{:?}", hex_string(&pubkey.serialize_uncompressed()));
-                let addr = keccak160(Pubkey::from(pubkey).as_ref());
-                OmniLockConfig::new_ethereum(addr)
-            }
-            IdentityFlag::Multisig => {
-                let args = &args.multis_args;
-                let multisig_config = build_multisig_config(
-                    &args.sighash_address,
-                    args.require_first_n,
-                    args.threshold,
-                )?;
-                OmniLockConfig::new_multisig(multisig_config)
-            }
-            _ => {
-                return Err(anyhow!(
-                    "must provide a sender-key or an ethereum-sender-key"
-                ));
-            }
-        };
+        let mut omnilock_config =
+            self.generate_omni_config(args.omni_identity_flag, &args.multis_args)?;
 
-        omnilock_config.set_opentx_mode();
         // Build CapacityBalancer
         let sender = Script::new_builder()
             .code_hash(omni_lock_info.type_hash.pack())
@@ -257,6 +232,150 @@ impl Wallet {
             omnilock_config: tx_info.omnilock_config,
         };
         Ok(tx_info)
+    }
+
+    pub fn gen_open_tx_pay_udt(
+        &self,
+        inputs: Vec<OutPoint>,
+        outputs: Vec<CellOutput>,
+        outputs_data: Vec<packed::Bytes>,
+    ) -> Result<TxInfo> {
+        let secp_data_cell_dep = CellDep::new_builder()
+            .out_point(OutPoint::new(
+                Byte32::from_slice(SECP_DATA_TX_HASH.as_bytes())?,
+                SECP_DATA_TX_IDX as u32,
+            ))
+            .build();
+        let omin_cell_dep = CellDep::new_builder()
+            .out_point(OutPoint::new(
+                Byte32::from_slice(OMNI_OPENTX_TX_HASH.as_bytes())?,
+                OMNI_OPENTX_TX_IDX as u32,
+            ))
+            .build();
+        let xudt_cell_dep = CellDep::new_builder()
+            .out_point(OutPoint::new(
+                Byte32::from_slice(XUDT_TX_HASH.as_bytes())?,
+                XUDT_TX_IDX as u32,
+            ))
+            .build();
+        let cell_deps = vec![secp_data_cell_dep, omin_cell_dep, xudt_cell_dep];
+
+        let (tx, omnilock_config) =
+            self.build_open_tx_pay_udt(inputs, outputs, outputs_data, cell_deps)?;
+        let tx_info = TxInfo {
+            tx: json_types::TransactionView::from(tx),
+            omnilock_config,
+        };
+        Ok(tx_info)
+    }
+
+    fn build_open_tx_pay_udt(
+        &self,
+        inputs: Vec<OutPoint>,
+        outputs: Vec<CellOutput>,
+        outputs_data: Vec<packed::Bytes>,
+        cell_deps: Vec<CellDep>,
+    ) -> Result<(TransactionView, OmniLockConfig)> {
+        // generate omni config
+        let mut omnilock_config = {
+            let arg = H160::from_slice(&self.secp_address.payload().args()).unwrap();
+            OmniLockConfig::new_pubkey_hash(arg)
+        };
+        omnilock_config.set_opentx_mode();
+
+        // build opentx
+        let tx_builder = TransactionView::new_advanced_builder();
+        let inputs: Vec<packed::CellInput> = inputs
+            .into_iter()
+            .map(|out_point| {
+                CellInputBuilder::default()
+                    .previous_output(out_point)
+                    .build()
+            })
+            .collect();
+
+        let tx = tx_builder
+            .inputs(inputs)
+            .outputs(outputs)
+            .outputs_data(outputs_data)
+            .cell_deps(cell_deps)
+            .build();
+
+        let tx_dep_provider = DefaultTransactionDependencyProvider::new(CKB_URI, 10);
+
+        // update opentx input list
+        let wit = OpentxWitness::new_sig_all_relative(&tx, Some(0xdeadbeef)).unwrap();
+        omnilock_config.set_opentx_input(wit);
+        let lock: Script = (&self.omni_otx_address).into();
+        let tx = OmniLockTransferBuilder::update_opentx_witness(
+            tx,
+            &omnilock_config,
+            OmniUnlockMode::Normal,
+            &tx_dep_provider,
+            &lock,
+        )
+        .unwrap();
+
+        //sign
+        let pks = vec![&self.pk];
+        let keys: Vec<secp256k1::SecretKey> = pks
+            .iter()
+            .map(|sender_key| {
+                secp256k1::SecretKey::from_slice(sender_key.as_bytes())
+                    .map_err(|err| format!("invalid sender secret key: {}", err))
+                    .unwrap()
+            })
+            .collect();
+
+        // config updated, so unlockers must rebuilt.
+        let unlockers =
+            build_omnilock_unlockers(keys, omnilock_config.clone(), OMNI_LOCK_DEVNET_TYPE_HASH);
+        let (tx, _new_locked_groups) = unlock_tx(tx, &tx_dep_provider, &unlockers).unwrap();
+
+        Ok((tx, omnilock_config))
+    }
+
+    fn generate_omni_config(
+        &self,
+        omni_identity_flag: IdentityFlag,
+        multis_args: &MultiSigArgs,
+    ) -> Result<OmniLockConfig> {
+        let mut omnilock_config = match omni_identity_flag {
+            IdentityFlag::PubkeyHash => {
+                let sender_key = secp256k1::SecretKey::from_slice(self.pk.as_bytes())
+                    .map_err(|err| anyhow!("invalid sender secret key: {}", err))?;
+                let pubkey = secp256k1::PublicKey::from_secret_key(&SECP256K1, &sender_key);
+                let pubkey_hash = blake160(&pubkey.serialize());
+                OmniLockConfig::new_pubkey_hash(pubkey_hash)
+            }
+            IdentityFlag::Ethereum => {
+                let sender_key = secp256k1::SecretKey::from_slice(self.pk.as_bytes())
+                    .map_err(|err| anyhow!("invalid sender secret key: {}", err))?;
+                let pubkey = secp256k1::PublicKey::from_secret_key(&SECP256K1, &sender_key);
+                println!("pubkey:{:?}", hex_string(&pubkey.serialize()));
+                println!("pubkey:{:?}", hex_string(&pubkey.serialize_uncompressed()));
+                let addr = keccak160(Pubkey::from(pubkey).as_ref());
+                OmniLockConfig::new_ethereum(addr)
+            }
+            IdentityFlag::Multisig => {
+                let args = &multis_args;
+                let multisig_config = build_multisig_config(
+                    &args.sighash_address,
+                    args.require_first_n,
+                    args.threshold,
+                )?;
+                OmniLockConfig::new_multisig(multisig_config)
+            }
+            _ => {
+                return Err(anyhow!(
+                    "must provide a sender-key or an ethereum-sender-key"
+                ));
+            }
+        };
+
+        omnilock_config.set_opentx_mode();
+
+        Ok(omnilock_config)
     }
 }
 

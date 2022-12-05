@@ -109,3 +109,38 @@ pub(crate) fn issue_udt_with_acp(
     // send tx to ckb node
     send_transaction_to_ckb(tx)
 }
+
+pub fn prepare_udt(amount: u128, to_address: &Address) -> Result<H256> {
+    // prepare udt
+    issue_udt_1().unwrap();
+    let udt_hash = UDT_1_HASH.get().unwrap();
+    let acp_address_with_udt = UDT_1_HOLDER_ACP_ADDRESS.get().unwrap();
+    let acp_address_pk = UDT_1_HOLDER_PK.get().unwrap();
+
+    let payload = TransferPayload {
+        asset_info: AssetInfo::new_udt(udt_hash.to_owned()),
+        from: vec![
+            JsonItem::Address(acp_address_with_udt.to_string()),
+            JsonItem::Address(GENESIS_BUILT_IN_ADDRESS_1.to_string()),
+        ],
+        to: vec![ToInfo {
+            address: to_address.to_string(),
+            amount: amount.into(),
+        }],
+        output_capacity_provider: Some(OutputCapacityProvider::From),
+        pay_fee: None,
+        fee_rate: None,
+        since: None,
+    };
+    let mercury_client = MercuryRpcClient::new(MERCURY_URI.to_string());
+    let tx = mercury_client.build_transfer_transaction(payload).unwrap();
+    let tx = sign_transaction(
+        tx,
+        &[
+            acp_address_pk.to_owned(),
+            GENESIS_BUILT_IN_ADDRESS_1_PRIVATE_KEY.to_owned(),
+        ],
+    )
+    .unwrap();
+    send_transaction_to_ckb(tx)
+}

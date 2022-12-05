@@ -3,7 +3,7 @@ pub mod mercury;
 use crate::const_definition::{
     ANYONE_CAN_PAY_DEVNET_TYPE_HASH, CELL_BASE_MATURE_EPOCH, CHEQUE_DEVNET_TYPE_HASH, CKB_URI,
     DAO_DEVNET_TYPE_HASH, GENESIS_EPOCH_LENGTH, MERCURY_URI, PW_LOCK_DEVNET_TYPE_HASH,
-    RPC_TRY_COUNT, RPC_TRY_INTERVAL_SECS, SIGHASH_TYPE_HASH, SUDT_DEVNET_TYPE_HASH,
+    RPC_TRY_COUNT, RPC_TRY_INTERVAL_SECS, SIGHASH_TYPE_HASH, XUDT_DEVNET_TYPE_HASH,
 };
 
 use crate::utils::ckb_rpc_client::CkbRpcClient;
@@ -117,7 +117,7 @@ pub(crate) fn start_mercury(ckb: Child) -> (Child, Child) {
 
             // init built-in script code hash
             let _ = SECP256K1_CODE_HASH.set(SIGHASH_TYPE_HASH);
-            let _ = SUDT_CODE_HASH.set(SUDT_DEVNET_TYPE_HASH);
+            let _ = SUDT_CODE_HASH.set(XUDT_DEVNET_TYPE_HASH);
             let _ = ACP_CODE_HASH.set(ANYONE_CAN_PAY_DEVNET_TYPE_HASH);
             let _ = CHEQUE_CODE_HASH.set(CHEQUE_DEVNET_TYPE_HASH);
             let _ = DAO_CODE_HASH.set(DAO_DEVNET_TYPE_HASH);

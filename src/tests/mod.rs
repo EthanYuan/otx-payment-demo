@@ -1,6 +1,7 @@
 mod sdk_open_tx_examples;
 mod transfer_udt;
 mod user_case;
+
 #[derive(Debug)]
 pub struct IntegrationTest {
     pub name: &'static str,
