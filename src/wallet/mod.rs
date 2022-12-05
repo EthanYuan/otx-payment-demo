@@ -1,6 +1,6 @@
 use crate::const_definition::{
     CKB_URI, OMNI_LOCK_DEVNET_TYPE_HASH, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX,
-    SECP_DATA_TX_HASH, SECP_DATA_TX_IDX, XUDT_TX_HASH, XUDT_TX_IDX,
+    SECP_DATA_TX_HASH, SECP_DATA_TX_IDX,
 };
 use crate::utils::lock::omni::{
     build_cell_dep, build_otx_omnilock_addr_from_secp, MultiSigArgs, TxInfo,
@@ -252,13 +252,7 @@ impl Wallet {
                 OMNI_OPENTX_TX_IDX as u32,
             ))
             .build();
-        let xudt_cell_dep = CellDep::new_builder()
-            .out_point(OutPoint::new(
-                Byte32::from_slice(XUDT_TX_HASH.as_bytes())?,
-                XUDT_TX_IDX as u32,
-            ))
-            .build();
-        let cell_deps = vec![secp_data_cell_dep, omin_cell_dep, xudt_cell_dep];
+        let cell_deps = vec![secp_data_cell_dep, omin_cell_dep];
 
         let (tx, omnilock_config) =
             self.build_open_tx_pay_udt(inputs, outputs, outputs_data, cell_deps)?;

@@ -22,7 +22,6 @@ use ckb_types::{
 use core_rpc_types::{GetBalancePayload, JsonItem};
 
 use std::collections::HashSet;
-use std::path::PathBuf;
 use std::str::FromStr;
 
 inventory::submit!(IntegrationTest {
@@ -30,19 +29,35 @@ inventory::submit!(IntegrationTest {
     test_fn: z_aggregate_otxs_omni_lock
 });
 fn z_aggregate_otxs_omni_lock() {
+    // {
+    //     inputs: [
+    //         {capacity: 151, data: "", type: "", lock: Alice},
+    //         {capacity: 144, data: 51, type: xudt z, lock: Bob},
+    //         {capacity: 100, data: "", type: "", lock: Carol},
+    //         {capacity: 144, data: 9, type: xudt z, lock: Carol},
+    //         {capacity: 142, data: 100, type: xudt z, lock: Z}
+    //     ],
+    //     outputs: [
+    //         {capacity: 151-51, data: "", type: "", lock: Alice},
+    //         {capacity: 144, data: 51-51, type: xudt z, lock: Bob},
+    //         {capacity: 100-1, data: "", type: "", lock: Carol},
+    //         {capacity: 144, data: 9+1, type: xudt z, lock: Carol},
+    //         {capacity: 142+50+1, data: 100+50, type: xudt z, lock: Z} ]
+    // }
     let alice_otx = alice_build_signed_otx().unwrap();
     let bob_otx = bob_build_signed_otx().unwrap();
-    // let _carol_otx_file = carol_build_signed_otx().unwrap();
+    let carol_otx_file = carol_build_signed_otx().unwrap();
 
-    let z_service = OtxService::new(vec![alice_otx, bob_otx], CKB_URI);
-    let tx_hash = ckb_cli_transfer_ckb(z_service.signer.get_secp_address(), 100).unwrap();
+    let z_service = OtxService::new(vec![alice_otx, bob_otx, carol_otx_file], CKB_URI);
+    let tx_hash = prepare_udt(100u128, z_service.signer.get_secp_address()).unwrap();
 
     // builder in Z service build full tx
     let open_tx = z_service.builder.merge_otxs().unwrap();
     dump_data(&open_tx, "./free-space/usercase_otxs_merged.json").unwrap();
     let input = AddInputArgs { tx_hash, index: 0 };
     let output = AddOutputArgs {
-        capacity: (150_0000_0000 + 1_0000_0000 - 10_0000).into(),
+        capacity: (142_0000_0000 + 50_0000_0000 + 1_0000_0000).into(),
+        udt_amount: Some(100 + 50),
     };
     let full_tx = z_service
         .add_input_and_output(open_tx, input, output)
@@ -140,6 +155,65 @@ fn bob_build_signed_otx() -> Result<TxInfo> {
     Ok(open_tx)
 }
 
-fn _carol_build_signed_otx() -> Result<PathBuf> {
-    todo!()
+fn carol_build_signed_otx() -> Result<TxInfo> {
+    // 1. init carol's wallet
+    let wallet = Wallet::init_account();
+    let otx_address = wallet.get_omni_otx_address();
+    let omni_otx_script: Script = otx_address.into();
+
+    // 2. transfer capacity to alice omni address
+    let tx_hash = ckb_cli_transfer_ckb(otx_address, 100).unwrap();
+    let capacity = ckb_cli_get_capacity(otx_address).unwrap();
+    let out_point_1 = OutPoint::new(Byte32::from_slice(tx_hash.as_bytes())?, 0u32);
+    assert_eq!(100f64, capacity);
+
+    // 3. transfer udt to carol omni address
+    let tx_hash = prepare_udt(9u128, otx_address).unwrap();
+    let out_point_2 = OutPoint::new(Byte32::from_slice(tx_hash.as_bytes())?, 0u32);
+    let balance_payload = GetBalancePayload {
+        item: JsonItem::OutPoint(out_point_2.clone().into()),
+        asset_infos: HashSet::new(),
+        extra: None,
+        tip_block_number: None,
+    };
+    let mercury_client = MercuryRpcClient::new(MERCURY_URI.to_string());
+    let balance = mercury_client.get_balance(balance_payload).unwrap();
+    assert_eq!(balance.balances.len(), 2);
+    assert_eq!(balance.balances[0].occupied, 144_0000_0000u128.into());
+    assert_eq!(balance.balances[1].free, 9u128.into());
+
+    // 4. carol generate open transaction, pay 1 CKB, get 1 UDT
+    let omni_output = CellOutput::new_builder()
+        .capacity(capacity_bytes!(99).pack())
+        .lock(omni_otx_script.clone())
+        .build();
+    let data = Bytes::default();
+
+    let udt_issuer_script: Script = UDT_1_HOLDER_SECP_ADDRESS.get().unwrap().into();
+    let xudt_type_script = Script::new_builder()
+        .code_hash(Byte32::from_slice(XUDT_DEVNET_TYPE_HASH.as_bytes()).unwrap())
+        .hash_type(ScriptHashType::Type.into())
+        .args(udt_issuer_script.calc_script_hash().raw_data().pack())
+        .build();
+    let xudt_output = CellOutput::new_builder()
+        .capacity(capacity_bytes!(144).pack())
+        .lock(omni_otx_script)
+        .type_(Some(xudt_type_script).pack())
+        .build();
+    let xudt_data = Bytes::from(10u128.to_le_bytes().to_vec());
+
+    let open_tx = wallet
+        .gen_open_tx_pay_udt(
+            vec![out_point_1, out_point_2],
+            vec![omni_output, xudt_output],
+            vec![data.pack(), xudt_data.pack()],
+        )
+        .unwrap();
+    let file = "./free-space/usercase_carol_otx_unsigned.json";
+    dump_data(&open_tx, file).unwrap();
+
+    let open_tx = wallet.sign_open_tx(open_tx).unwrap();
+    dump_data(&open_tx, "./free-space/usercase_carol_otx_signed.json").unwrap();
+
+    Ok(open_tx)
 }

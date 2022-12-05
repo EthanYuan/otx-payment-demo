@@ -56,6 +56,16 @@ inventory::submit!(IntegrationTest {
     test_fn: test_burn_udt
 });
 fn test_burn_udt() {
+    // {
+    //     inputs: [
+    //         {capacity: 144, data: 51, type: xudt z, lock: Bob},
+    //         {capacity: 100, data: "", type: "", lock: Z}
+    //     ],
+    //     outputs: [
+    //         {capacity: 144, data: 51-51, type: xudt z, lock: Bob},
+    //         {capacity: 99, data: "", type: "", lock: Z} ]
+    // }
+
     let open_tx = bob_build_signed_otx().unwrap();
 
     let z_service = OtxService::new(vec![], CKB_URI);
@@ -64,7 +74,8 @@ fn test_burn_udt() {
     // builder in Z service build full tx
     let input = AddInputArgs { tx_hash, index: 0 };
     let output = AddOutputArgs {
-        capacity: (100_0000_0000 - 10_0000).into(),
+        capacity: (100_0000_0000 - 1_0000_0000).into(),
+        udt_amount: None,
     };
     let full_tx = z_service
         .add_input_and_output(open_tx, input, output)

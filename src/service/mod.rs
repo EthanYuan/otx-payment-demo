@@ -41,7 +41,12 @@ impl OtxService {
         output: AddOutputArgs,
     ) -> Result<TxInfo> {
         let tx_info = add_input(open_tx, input.tx_hash, input.index)?;
-        add_output(tx_info, self.signer.get_secp_address(), output.capacity)
+        add_output(
+            tx_info,
+            self.signer.get_secp_address(),
+            output.capacity,
+            output.udt_amount,
+        )
     }
 }
 
@@ -138,4 +143,5 @@ pub struct AddInputArgs {
 pub struct AddOutputArgs {
     /// The capacity to transfer (unit: CKB, example: 102.43)
     pub capacity: HumanCapacity,
+    pub udt_amount: Option<u128>,
 }

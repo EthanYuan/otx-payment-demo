@@ -1,4 +1,6 @@
-use crate::const_definition::CKB_URI;
+use crate::const_definition::{
+    CKB_URI, UDT_1_HOLDER_SECP_ADDRESS, XUDT_DEVNET_TYPE_HASH, XUDT_TX_HASH, XUDT_TX_IDX,
+};
 
 use crate::utils::lock::omni::TxInfo;
 
@@ -17,8 +19,8 @@ use ckb_sdk::{
 
 use ckb_types::{
     bytes::Bytes,
-    core::{BlockView, Capacity, TransactionView},
-    packed::{Byte32, CellOutput, OutPoint, Script, Transaction},
+    core::{BlockView, Capacity, ScriptHashType, TransactionView},
+    packed::{Byte32, CellDep, CellOutput, OutPoint, Script, Transaction},
     prelude::*,
     H256,
 };
@@ -70,18 +72,46 @@ pub fn add_output(
     tx_info: TxInfo,
     payee_address: &Address,
     capacity: HumanCapacity,
+    udt_amount: Option<u128>,
 ) -> Result<TxInfo> {
     let tx = Transaction::from(tx_info.tx.inner).into_view();
     let lock_script = Script::from(payee_address.payload());
-    let output = CellOutput::new_builder()
+    let udt_issuer_script: Script = UDT_1_HOLDER_SECP_ADDRESS.get().unwrap().into();
+
+    let mut output = CellOutput::new_builder()
         .capacity(Capacity::shannons(capacity.0).pack())
         .lock(lock_script)
         .build();
+    let mut xudt_data = Bytes::default();
+
+    if let Some(udt_amount) = udt_amount {
+        let xudt_type_script = Script::new_builder()
+            .code_hash(Byte32::from_slice(XUDT_DEVNET_TYPE_HASH.as_bytes()).unwrap())
+            .hash_type(ScriptHashType::Type.into())
+            .args(udt_issuer_script.calc_script_hash().raw_data().pack())
+            .build();
+
+        output = output
+            .as_builder()
+            .type_(Some(xudt_type_script).pack())
+            .build();
+        xudt_data = Bytes::from(udt_amount.to_le_bytes().to_vec());
+    }
+
+    let xudt_cell_dep = CellDep::new_builder()
+        .out_point(OutPoint::new(
+            Byte32::from_slice(XUDT_TX_HASH.as_bytes())?,
+            XUDT_TX_IDX as u32,
+        ))
+        .build();
+
     let tx = tx
         .as_advanced_builder()
         .output(output)
-        .output_data(Bytes::default().pack())
+        .output_data(xudt_data.pack())
+        .cell_dep(xudt_cell_dep)
         .build();
+
     let tx_info = TxInfo {
         tx: json_types::TransactionView::from(tx),
         omnilock_config: tx_info.omnilock_config,
