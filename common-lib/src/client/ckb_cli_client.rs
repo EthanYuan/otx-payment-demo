@@ -1,4 +1,4 @@
-use crate::instruction::{aggregate_transactions_into_blocks, run_command_output};
+use crate::instruction::{ckb::aggregate_transactions_into_blocks, command::run_command_output};
 
 use anyhow::Result;
 use ckb_sdk::Address;

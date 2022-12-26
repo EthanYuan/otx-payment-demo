@@ -1,6 +1,7 @@
-pub mod tests;
+mod help;
+mod tests;
 
-use common_lib::instruction::{setup, teardown};
+use help::{setup, teardown};
 
 use clap::Parser;
 use tests::IntegrationTest;

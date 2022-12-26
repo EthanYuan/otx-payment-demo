@@ -1,10 +1,10 @@
 use super::super::IntegrationTest;
 
-use common_lib::ckb_cli::ckb_cli_transfer_ckb;
-use common_lib::instruction::dump_data;
+use common_lib::client::ckb_cli_client::ckb_cli_transfer_ckb;
+use common_lib::client::mercury_client::MercuryRpcClient;
+use common_lib::instruction::ckb::dump_data;
 use common_lib::instruction::mercury::{issue_udt_1, prepare_udt};
 use common_lib::lock::omni::TxInfo;
-use common_lib::mercury_client_rpc::MercuryRpcClient;
 use service::{AddInputArgs, AddOutputArgs, OtxService};
 use wallet::Wallet;
 

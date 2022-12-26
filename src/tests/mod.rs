@@ -9,7 +9,7 @@ pub struct IntegrationTest {
 }
 
 impl IntegrationTest {
-    pub fn all_test_names() -> Vec<&'static str> {
+    pub fn _all_test_names() -> Vec<&'static str> {
         inventory::iter::<IntegrationTest>
             .into_iter()
             .map(|x| x.name)
