@@ -1,11 +1,11 @@
-use crate::const_definition::{
+use common_lib::const_definition::{
     CKB_URI, OMNI_LOCK_DEVNET_TYPE_HASH, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX,
     SECP_DATA_TX_HASH, SECP_DATA_TX_IDX,
 };
-use crate::utils::lock::omni::{
+use common_lib::lock::omni::{
     build_cell_dep, build_otx_omnilock_addr_from_secp, MultiSigArgs, TxInfo,
 };
-use crate::utils::lock::secp::generate_rand_secp_address_pk_pair;
+use common_lib::lock::secp::generate_rand_secp_address_pk_pair;
 
 use ckb_sdk::{
     constants::SIGHASH_TYPE_HASH,

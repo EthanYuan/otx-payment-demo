@@ -7,7 +7,6 @@ use ckb_sdk::{
     rpc::CkbRpcClient, types::NetworkType, unlock::OmniLockConfig, Address, AddressPayload,
     ScriptId,
 };
-
 use ckb_types::{
     core::ScriptHashType,
     packed::{Byte32, CellDep, OutPoint, Script},

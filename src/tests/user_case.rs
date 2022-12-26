@@ -1,15 +1,15 @@
 use super::super::IntegrationTest;
-use crate::const_definition::CKB_URI;
-use crate::const_definition::{MERCURY_URI, UDT_1_HOLDER_SECP_ADDRESS, XUDT_DEVNET_TYPE_HASH};
-use crate::service::{AddInputArgs, AddOutputArgs, OtxService};
-use crate::utils::ckb_cli::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
-use crate::utils::instruction::dump_data;
-use crate::utils::instruction::mercury::prepare_udt;
 
-use crate::utils::lock::omni::{MultiSigArgs, TxInfo};
-use crate::utils::mercury_client_rpc::MercuryRpcClient;
-
-use crate::wallet::{GenOpenTxArgs, Wallet};
+use common_lib::ckb_cli::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
+use common_lib::const_definition::{
+    CKB_URI, MERCURY_URI, UDT_1_HOLDER_SECP_ADDRESS, XUDT_DEVNET_TYPE_HASH,
+};
+use common_lib::instruction::dump_data;
+use common_lib::instruction::mercury::prepare_udt;
+use common_lib::lock::omni::{MultiSigArgs, TxInfo};
+use common_lib::mercury_client_rpc::MercuryRpcClient;
+use service::{AddInputArgs, AddOutputArgs, OtxService};
+use wallet::{GenOpenTxArgs, Wallet};
 
 use anyhow::Result;
 use ckb_sdk::{unlock::IdentityFlag, HumanCapacity};

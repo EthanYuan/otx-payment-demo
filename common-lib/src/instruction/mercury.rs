@@ -4,12 +4,11 @@ use crate::const_definition::{
     GENESIS_BUILT_IN_ADDRESS_1, GENESIS_BUILT_IN_ADDRESS_1_PRIVATE_KEY, MERCURY_URI, UDT_1_HASH,
     UDT_1_HOLDER_ACP_ADDRESS, UDT_1_HOLDER_PK, UDT_1_HOLDER_SECP_ADDRESS,
 };
-use crate::utils::lock::acp::build_acp_address;
-use crate::utils::lock::get_udt_hash_by_owner;
-use crate::utils::lock::secp::prepare_secp_address_with_ckb_capacity;
-use crate::utils::mercury_client_rpc::MercuryRpcClient;
-
-use crate::utils::signer::sign_transaction;
+use crate::lock::acp::build_acp_address;
+use crate::lock::get_udt_hash_by_owner;
+use crate::lock::secp::prepare_secp_address_with_ckb_capacity;
+use crate::mercury_client_rpc::MercuryRpcClient;
+use crate::signer::sign_transaction;
 
 use anyhow::Result;
 use ckb_jsonrpc_types::OutPoint;
@@ -21,7 +20,7 @@ use core_rpc_types::{
     TransferPayload,
 };
 
-pub(crate) fn issue_udt_1() -> Result<()> {
+pub fn issue_udt_1() -> Result<()> {
     if UDT_1_HASH.get().is_some() {
         return Ok(());
     }

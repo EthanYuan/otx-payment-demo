@@ -6,8 +6,8 @@ use crate::const_definition::{
     RPC_TRY_COUNT, RPC_TRY_INTERVAL_SECS, SIGHASH_TYPE_HASH, XUDT_DEVNET_TYPE_HASH,
 };
 
-use crate::utils::ckb_rpc_client::CkbRpcClient;
-use crate::utils::mercury_client_rpc::MercuryRpcClient;
+use crate::ckb_rpc_client::CkbRpcClient;
+use crate::mercury_client_rpc::MercuryRpcClient;
 
 use anyhow::{anyhow, Result};
 use ckb_jsonrpc_types::{OutputsValidator, Transaction};
@@ -75,7 +75,7 @@ where
     }
 }
 
-pub(crate) fn setup() -> Vec<Child> {
+pub fn setup() -> Vec<Child> {
     println!("Setup test environment...");
     let ckb = start_ckb_node();
     let (ckb, mercury) = start_mercury(ckb);
@@ -132,13 +132,13 @@ pub(crate) fn start_mercury(ckb: Child) -> (Child, Child) {
     panic!("Setup test environment failed");
 }
 
-pub(crate) fn teardown(childs: Vec<Child>) {
+pub fn teardown(childs: Vec<Child>) {
     for mut child in childs {
         child.kill().expect("teardown failed");
     }
 }
 
-pub(crate) fn start_ckb_node() -> Child {
+pub fn start_ckb_node() -> Child {
     let ckb = run_command_spawn(
         "ckb",
         vec!["run", "-C", "dev_chain/dev", "--skip-spec-check"],

@@ -1,12 +1,9 @@
-pub mod const_definition;
-pub mod service;
 pub mod tests;
-pub mod utils;
-pub mod wallet;
+
+use common_lib::instruction::{setup, teardown};
 
 use clap::Parser;
 use tests::IntegrationTest;
-use utils::instruction::{setup, teardown};
 
 use std::panic;
 use std::time::Instant;

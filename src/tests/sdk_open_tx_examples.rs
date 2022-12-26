@@ -1,8 +1,9 @@
 use super::super::IntegrationTest;
-use crate::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
-use crate::utils::ckb_cli::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
-use crate::utils::instruction::dump_data;
-use crate::utils::lock::secp::generate_rand_secp_address_pk_pair;
+
+use common_lib::ckb_cli::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
+use common_lib::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
+use common_lib::instruction::dump_data;
+use common_lib::lock::secp::generate_rand_secp_address_pk_pair;
 
 use anyhow::{anyhow, Result};
 use ckb_crypto::secp::Pubkey;
@@ -28,7 +29,6 @@ use ckb_sdk::{
     util::{blake160, keccak160},
     Address, AddressPayload, HumanCapacity, ScriptGroup, ScriptId, SECP256K1,
 };
-
 use ckb_types::{
     bytes::Bytes,
     core::{BlockView, Capacity, ScriptHashType, TransactionView},

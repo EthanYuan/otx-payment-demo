@@ -459,6 +459,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "common-lib"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ckb-crypto",
+ "ckb-hash",
+ "ckb-jsonrpc-types",
+ "ckb-sdk",
+ "ckb-types",
+ "common",
+ "core-rpc-types",
+ "hex",
+ "jsonrpc-core",
+ "once_cell",
+ "rand 0.8.5",
+ "reqwest",
+ "secp256k1 0.24.1",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1006,6 +1028,7 @@ dependencies = [
  "ckb-types",
  "clap",
  "common",
+ "common-lib",
  "core-rpc-types",
  "hex",
  "inventory",
@@ -1017,6 +1040,8 @@ dependencies = [
  "secp256k1 0.24.1",
  "serde",
  "serde_json",
+ "service",
+ "wallet",
 ]
 
 [[package]]
@@ -1833,6 +1858,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "service"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ckb-jsonrpc-types",
+ "ckb-sdk",
+ "ckb-types",
+ "common-lib",
+]
+
+[[package]]
 name = "sha3"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2134,6 +2170,20 @@ dependencies = [
  "same-file",
  "winapi",
  "winapi-util",
+]
+
+[[package]]
+name = "wallet"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ckb-crypto",
+ "ckb-hash",
+ "ckb-jsonrpc-types",
+ "ckb-sdk",
+ "ckb-types",
+ "common-lib",
+ "secp256k1 0.24.1",
 ]
 
 [[package]]

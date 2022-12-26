@@ -1,13 +1,12 @@
-use std::str::FromStr;
-
-use crate::utils::instruction::{aggregate_transactions_into_blocks, run_command_output};
-
-use ckb_sdk::Address;
+use crate::instruction::{aggregate_transactions_into_blocks, run_command_output};
 
 use anyhow::Result;
+use ckb_sdk::Address;
 use ckb_types::H256;
 
-pub(crate) fn ckb_cli_transfer_ckb(address: &Address, capacity: usize) -> Result<H256> {
+use std::str::FromStr;
+
+pub fn ckb_cli_transfer_ckb(address: &Address, capacity: usize) -> Result<H256> {
     // ckb-cli
     // config --url http://127.0.0.1:8114"
     let (stdout, _) = run_command_output(
@@ -36,7 +35,7 @@ pub(crate) fn ckb_cli_transfer_ckb(address: &Address, capacity: usize) -> Result
     H256::from_str(&tx_hash).map_err(Into::into)
 }
 
-pub(crate) fn ckb_cli_get_capacity(address: &Address) -> Result<f64> {
+pub fn ckb_cli_get_capacity(address: &Address) -> Result<f64> {
     // ckb-cli
     // config --url http://127.0.0.1:8114"
     let (stdout, _) = run_command_output(
