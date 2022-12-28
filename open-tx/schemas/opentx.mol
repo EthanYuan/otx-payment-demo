@@ -1,20 +1,4 @@
-/// From CKB
-// The `UintN` is used to store a `N` bits unsigned integer
-// as a byte array in little endian.
-array Uint32 [byte; 4];
-array Uint64 [byte; 8];
-array Uint128 [byte; 16];
-
-array Byte32 [byte; 32];
-array Uint256 [byte; 32];
-
-vector Bytes <byte>;
-option BytesOpt (Bytes);
-
-struct OutPoint {
-    tx_hash:        Byte32,
-    index:          Uint32,
-}
+import blockchain;
 
 /// Open Transaction Definition
 table OpenTransaction {
@@ -34,5 +18,3 @@ table OtxKeyPair {
     key_data: BytesOpt,
     value_data: Bytes,
 }
-
-/// Types Used In KeyPair

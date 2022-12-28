@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 ckb-jsonrpc-types = "0.105"
+ckb-types = "0.105"
 molecule = "=0.7.3"

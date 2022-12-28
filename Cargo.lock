@@ -1300,6 +1300,7 @@ name = "open-tx"
 version = "0.1.0"
 dependencies = [
  "ckb-jsonrpc-types",
+ "ckb-types",
  "molecule",
 ]
 
