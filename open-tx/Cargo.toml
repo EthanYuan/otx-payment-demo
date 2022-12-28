@@ -9,3 +9,5 @@ edition = "2021"
 ckb-jsonrpc-types = "0.105"
 ckb-types = "0.105"
 molecule = "=0.7.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

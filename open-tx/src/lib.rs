@@ -1,29 +1,3 @@
 mod generated;
-
-pub use generated::packed;
-
-#[cfg(test)]
-mod test {
-    use crate::packed::OpenTransaction;
-
-    use super::*;
-    use ckb_jsonrpc_types::JsonBytes;
-    use generated::packed::OpenTransactionBuilder;
-    use molecule::prelude::*;
-
-    #[test]
-    fn test_serialize() {
-        let builder = OpenTransactionBuilder::default();
-        let opentx = builder.build();
-        let opentx_bytes = opentx.as_bytes();
-        let json_rpc_format = JsonBytes::from_bytes(opentx_bytes);
-        println!("{:?}", opentx);
-        println!("{:?}", json_rpc_format);
-
-        let opentx_bytes = json_rpc_format.as_bytes();
-        println!("{:?}", opentx_bytes);
-        let opentx_rebuild = OpenTransaction::from_slice(opentx_bytes).unwrap();
-
-        assert_eq!(opentx.as_bytes(), opentx_rebuild.as_bytes())
-    }
-}
+mod jsonrpc_types;
+mod types;

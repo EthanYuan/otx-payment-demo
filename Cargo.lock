@@ -1302,6 +1302,8 @@ dependencies = [
  "ckb-jsonrpc-types",
  "ckb-types",
  "molecule",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
