@@ -1,6 +1,6 @@
 use crate::types::packed::{self, OpenTransactionBuilder, OtxMapBuilder, OtxMapVecBuilder};
 
-use ckb_jsonrpc_types::{JsonBytes, TransactionView, Uint32};
+use ckb_jsonrpc_types::{JsonBytes, Uint32};
 use ckb_types::prelude::{Builder, Pack, Unpack};
 use serde::{Deserialize, Serialize};
 
@@ -9,6 +9,16 @@ pub struct OtxKeyPair {
     key_type: Uint32,
     key_data: Option<JsonBytes>,
     value_data: JsonBytes,
+}
+
+impl OtxKeyPair {
+    pub fn new(key_type: Uint32, key_data: Option<JsonBytes>, value_data: JsonBytes) -> Self {
+        OtxKeyPair {
+            key_type,
+            key_data,
+            value_data,
+        }
+    }
 }
 
 impl From<OtxKeyPair> for packed::OtxKeyPair {
@@ -98,16 +108,3 @@ impl From<packed::OpenTransaction> for OpenTransaction {
         }
     }
 }
-
-impl From<OpenTransaction> for TransactionView {
-    fn from(otx: OpenTransaction) -> Self {
-        todo!()
-    }
-}
-
-impl From<TransactionView> for OpenTransaction {
-    fn from(tx_view: TransactionView) -> Self {
-        todo!()
-    }
-}
-

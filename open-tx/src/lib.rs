@@ -1,3 +1,3 @@
 mod generated;
-mod jsonrpc_types;
-mod types;
+pub mod jsonrpc_types;
+pub mod types;

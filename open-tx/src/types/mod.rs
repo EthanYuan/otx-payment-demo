@@ -22,6 +22,6 @@ mod test {
         println!("{:?}", opentx_bytes);
         let opentx_rebuild = OpenTransaction::from_slice(opentx_bytes).unwrap();
 
-        assert_eq!(opentx.as_bytes(), opentx_rebuild.as_bytes())
+        assert_eq!(opentx.as_bytes(), opentx_rebuild.as_bytes());
     }
 }

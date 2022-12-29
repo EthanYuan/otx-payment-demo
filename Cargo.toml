@@ -23,6 +23,7 @@ common = { path = "./mercury/common"}
 core-rpc-types = { path = "./mercury/core/rpc/types"}
 
 common-lib = { path = "./common-lib" }
+open-tx = { path = "./open-tx" }
 service = { path = "./service" }
 wallet = { path = "./wallet"}
 
