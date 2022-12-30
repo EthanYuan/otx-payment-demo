@@ -1303,6 +1303,7 @@ dependencies = [
  "anyhow",
  "ckb-jsonrpc-types",
  "ckb-types",
+ "derive_more",
  "molecule",
  "serde",
  "serde_json",
