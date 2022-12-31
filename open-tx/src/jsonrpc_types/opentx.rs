@@ -1,17 +1,19 @@
 use super::constant::key_type::{
     OTX_CELL_DEP_TYPE, OTX_HEADER_DEP_HASH, OTX_INPUT_SINCE, OTX_OUTPOINT, OTX_OUTPUT_CAPACITY,
-    OTX_OUTPUT_DATA, OTX_OUTPUT_LOCK_ARGS, OTX_OUTPUT_LOCK_CODE_HASH, OTX_OUTPUT_TYPE_ARGS,
-    OTX_OUTPUT_TYPE_CODE_HASH, OTX_OUTPUT_TYPE_HASH_TYPE, OTX_WITNESS_ARGS, OTX_WITNESS_RAW,
+    OTX_OUTPUT_DATA, OTX_OUTPUT_LOCK_ARGS, OTX_OUTPUT_LOCK_CODE_HASH, OTX_OUTPUT_LOCK_HASH_TYPE,
+    OTX_OUTPUT_TYPE_ARGS, OTX_OUTPUT_TYPE_CODE_HASH, OTX_OUTPUT_TYPE_HASH_TYPE,
+    OTX_WITNESS_RAW,
 };
 use crate::types::packed::{self, OpenTransactionBuilder, OtxMapBuilder, OtxMapVecBuilder};
 
-use ckb_jsonrpc_types::{CellDep, JsonBytes, Uint32};
-use ckb_types::core::DepType;
+use ckb_jsonrpc_types::{CellDep, CellInput, CellOutput, JsonBytes, Uint32};
+use ckb_types::core::{DepType, ScriptHashType};
 use ckb_types::{self, prelude::*, H256};
 use serde::{Deserialize, Serialize};
 
 pub type HeaderDep = H256;
 pub type Witness = JsonBytes;
+pub type OutputData = JsonBytes;
 
 #[derive(Clone, Default, Serialize, Deserialize, PartialEq, Eq, Hash, Debug)]
 pub struct OtxKeyPair {
@@ -88,6 +90,26 @@ pub struct OpenTransaction {
     inputs: OtxMapVec,
     witnesses: OtxMapVec,
     outputs: OtxMapVec,
+}
+
+impl OpenTransaction {
+    pub fn new(
+        meta: OtxMap,
+        cell_deps: OtxMapVec,
+        header_deps: OtxMapVec,
+        inputs: OtxMapVec,
+        witnesses: OtxMapVec,
+        outputs: OtxMapVec,
+    ) -> Self {
+        OpenTransaction {
+            meta,
+            cell_deps,
+            header_deps,
+            inputs,
+            witnesses,
+            outputs,
+        }
+    }
 }
 
 impl From<OpenTransaction> for packed::OpenTransaction {
@@ -180,5 +202,71 @@ impl From<Witness> for OtxMap {
     fn from(witness: Witness) -> Self {
         let witness = OtxKeyPair::new(OTX_WITNESS_RAW.into(), None, witness);
         vec![witness].into()
+    }
+}
+
+impl From<CellInput> for OtxMap {
+    fn from(cell_input: CellInput) -> Self {
+        let previous_output: ckb_types::packed::OutPoint = cell_input.previous_output.into();
+        let previous_output = OtxKeyPair::new(
+            OTX_OUTPOINT.into(),
+            None,
+            JsonBytes::from_bytes(previous_output.as_bytes()),
+        );
+        let since = cell_input.since.pack();
+        let since = OtxKeyPair::new(
+            OTX_INPUT_SINCE.into(),
+            None,
+            JsonBytes::from_bytes(since.as_bytes()),
+        );
+        vec![previous_output, since].into()
+    }
+}
+
+impl From<(CellOutput, OutputData)> for OtxMap {
+    fn from(output: (CellOutput, OutputData)) -> Self {
+        let capacity = OtxKeyPair::new(
+            OTX_OUTPUT_CAPACITY.into(),
+            None,
+            JsonBytes::from_bytes(output.0.capacity.pack().as_bytes()),
+        );
+        let lock_code_hash = OtxKeyPair::new(
+            OTX_OUTPUT_LOCK_CODE_HASH.into(),
+            None,
+            JsonBytes::from_bytes(output.0.lock.code_hash.pack().as_bytes()),
+        );
+        let lock_hash_type: ScriptHashType = output.0.lock.hash_type.into();
+        let lock_hash_type: packed::Byte = lock_hash_type.into();
+        let lock_hash_type = OtxKeyPair::new(
+            OTX_OUTPUT_LOCK_HASH_TYPE.into(),
+            None,
+            JsonBytes::from_bytes(lock_hash_type.as_bytes()),
+        );
+        let lock_args = OtxKeyPair::new(OTX_OUTPUT_LOCK_ARGS.into(), None, output.0.lock.args);
+        let mut map = vec![capacity, lock_code_hash, lock_hash_type, lock_args];
+
+        if let Some(type_) = output.0.type_ {
+            let type_code_hash = OtxKeyPair::new(
+                OTX_OUTPUT_TYPE_CODE_HASH.into(),
+                None,
+                JsonBytes::from_bytes(type_.code_hash.pack().as_bytes()),
+            );
+            map.push(type_code_hash);
+            let type_hash_type: ScriptHashType = type_.hash_type.into();
+            let type_hash_type: packed::Byte = type_hash_type.into();
+            let type_hash_type = OtxKeyPair::new(
+                OTX_OUTPUT_TYPE_HASH_TYPE.into(),
+                None,
+                JsonBytes::from_bytes(type_hash_type.as_bytes()),
+            );
+            map.push(type_hash_type);
+            let type_args = OtxKeyPair::new(OTX_OUTPUT_TYPE_ARGS.into(), None, type_.args);
+            map.push(type_args);
+        };
+
+        let data = OtxKeyPair::new(OTX_OUTPUT_DATA.into(), None, output.1);
+        map.push(data);
+
+        map.into()
     }
 }

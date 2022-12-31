@@ -1,6 +1,6 @@
 use crate::error::OtxError;
 use crate::jsonrpc_types::constant::key_type::OTX_META_VERSION;
-use crate::jsonrpc_types::{OpenTransaction, OtxKeyPair, OtxMap, OtxMapVec};
+use crate::jsonrpc_types::{OpenTransaction, OtxKeyPair, OtxMap};
 
 use anyhow::Result;
 use ckb_jsonrpc_types::{JsonBytes, TransactionView, Uint32};
@@ -28,15 +28,37 @@ pub fn tx_view_to_otx(
         .map(Into::into)
         .collect();
 
-    // OpenTransaction {
-    //     meta:meta.into(),
-    //     cell_deps: cell_deps.into(),
-    //     header_deps: (),
-    //     inputs: (),
-    //     witnesses: (),
-    //     outputs: (),
-    // }
-    todo!()
+    let header_deps: Vec<OtxMap> = tx_view
+        .inner
+        .header_deps
+        .into_iter()
+        .map(Into::into)
+        .collect();
+
+    let inputs: Vec<OtxMap> = tx_view.inner.inputs.into_iter().map(Into::into).collect();
+
+    let witnesses: Vec<OtxMap> = tx_view
+        .inner
+        .witnesses
+        .into_iter()
+        .map(Into::into)
+        .collect();
+
+    let outputs = tx_view
+        .inner
+        .outputs
+        .into_iter()
+        .zip(tx_view.inner.outputs_data.into_iter());
+    let outputs: Vec<OtxMap> = outputs.map(Into::into).collect();
+
+    Ok(OpenTransaction::new(
+        meta.into(),
+        cell_deps.into(),
+        header_deps.into(),
+        inputs.into(),
+        witnesses.into(),
+        outputs.into(),
+    ))
 }
 
 pub fn otx_to_tx_view(_tx_view: OpenTransaction) -> Result<TransactionView> {
