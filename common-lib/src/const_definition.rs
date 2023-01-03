@@ -11,6 +11,7 @@ pub const CHEQUE_LOCK_EPOCH: u64 = 6;
 
 pub const CKB_URI: &str = "http://127.0.0.1:8114";
 pub const MERCURY_URI: &str = "http://127.0.0.1:8116";
+pub const SERVICE_URI: &str = "http://127.0.0.1:8118";
 
 pub const GENESIS_BUILT_IN_ADDRESS_1: &str = "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqwgx292hnvmn68xf779vmzrshpmm6epn4c0cgwga";
 pub const GENESIS_BUILT_IN_ADDRESS_1_PRIVATE_KEY: H256 =

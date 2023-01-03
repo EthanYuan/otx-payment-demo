@@ -1,9 +1,10 @@
 use common_lib::client::ckb_client::CkbRpcClient;
 use common_lib::client::mercury_client::MercuryRpcClient;
+use common_lib::client::service_client::ServiceRpcClient;
 use common_lib::const_definition::{
     ANYONE_CAN_PAY_DEVNET_TYPE_HASH, CHEQUE_DEVNET_TYPE_HASH, CKB_URI, DAO_DEVNET_TYPE_HASH,
-    MERCURY_URI, PW_LOCK_DEVNET_TYPE_HASH, RPC_TRY_COUNT, RPC_TRY_INTERVAL_SECS, SIGHASH_TYPE_HASH,
-    XUDT_DEVNET_TYPE_HASH,
+    MERCURY_URI, PW_LOCK_DEVNET_TYPE_HASH, RPC_TRY_COUNT, RPC_TRY_INTERVAL_SECS, SERVICE_URI,
+    SIGHASH_TYPE_HASH, XUDT_DEVNET_TYPE_HASH,
 };
 use common_lib::instruction::{
     ckb::generate_blocks, ckb::unlock_frozen_capacity_in_genesis, command::run_command_spawn,
@@ -14,6 +15,8 @@ use common::lazy::{
     SUDT_CODE_HASH,
 };
 
+use ckb_jsonrpc_types::JsonBytes;
+
 use std::panic;
 use std::process::Child;
 use std::thread::sleep;
@@ -23,7 +26,8 @@ pub fn setup() -> Vec<Child> {
     println!("Setup test environment...");
     let ckb = start_ckb_node();
     let (ckb, mercury) = start_mercury(ckb);
-    vec![ckb, mercury]
+    let (ckb, mercury, service) = start_service(ckb, mercury);
+    vec![ckb, mercury, service]
 }
 
 pub fn teardown(childs: Vec<Child>) {
@@ -75,7 +79,6 @@ pub(crate) fn start_mercury(ckb: Child) -> (Child, Child) {
     for _try in 0..=RPC_TRY_COUNT {
         let resp = mercury_client.get_mercury_info();
         if resp.is_ok() {
-            let mercury_client = MercuryRpcClient::new(MERCURY_URI.to_string());
             mercury_client.wait_sync();
 
             // This step is used to make mercury enter the normal serial sync loop state
@@ -100,4 +103,24 @@ pub(crate) fn start_mercury(ckb: Child) -> (Child, Child) {
     }
     teardown(vec![ckb, mercury]);
     panic!("Setup test environment failed");
+}
+
+pub(crate) fn start_service(ckb: Child, mercury: Child) -> (Child, Child, Child) {
+    let service = run_command_spawn(
+        "cargo",
+        vec!["run", "--manifest-path", "service/Cargo.toml"],
+    );
+    println!("{:?}", service);
+    let service = if let Ok(service) = service {
+        service
+    } else {
+        teardown(vec![ckb, mercury]);
+        panic!("start service");
+    };
+    let client = ServiceRpcClient::new(SERVICE_URI.to_string());
+    for _try in 0..=RPC_TRY_COUNT {
+        let ret = client.submit_otx(JsonBytes::default());
+        println!("{:?}", ret);
+    }
+    (ckb, mercury, service)
 }

@@ -24,6 +24,7 @@ core-rpc-types = { path = "./mercury/core/rpc/types"}
 
 common-lib = { path = "./common-lib" }
 open-tx = { path = "./open-tx" }
+otx-transaction-pool = { path = "./otx-transaction-pool" }
 service = { path = "./service" }
 wallet = { path = "./wallet"}
 
@@ -33,6 +34,8 @@ members = [
     "wallet",
     "service",
     
-    "open-tx"
+    "open-tx",
+
+    "otx-transaction-pool",
 ]
 exclude = ["./mercury"]
