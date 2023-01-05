@@ -26,8 +26,8 @@ pub fn setup() -> Vec<Child> {
     println!("Setup test environment...");
     let ckb = start_ckb_node();
     let (ckb, mercury) = start_mercury(ckb);
-    let (ckb, mercury, service) = start_service(ckb, mercury);
-    vec![ckb, mercury, service]
+    let (ckb, mercury, service_payment) = start_service_payment(ckb, mercury);
+    vec![ckb, mercury, service_payment]
 }
 
 pub fn teardown(childs: Vec<Child>) {
@@ -105,22 +105,26 @@ pub(crate) fn start_mercury(ckb: Child) -> (Child, Child) {
     panic!("Setup test environment failed");
 }
 
-pub(crate) fn start_service(ckb: Child, mercury: Child) -> (Child, Child, Child) {
+pub(crate) fn start_service_payment(ckb: Child, mercury: Child) -> (Child, Child, Child) {
     let service = run_command_spawn(
         "cargo",
-        vec!["run", "--manifest-path", "service/Cargo.toml"],
+        vec!["run", "--manifest-path", "service_payment/Cargo.toml"],
     );
-    println!("{:?}", service);
     let service = if let Ok(service) = service {
         service
     } else {
         teardown(vec![ckb, mercury]);
-        panic!("start service");
+        panic!("start service payment");
     };
     let client = ServiceRpcClient::new(SERVICE_URI.to_string());
     for _try in 0..=RPC_TRY_COUNT {
-        let ret = client.submit_otx(JsonBytes::default());
-        println!("{:?}", ret);
+        let resp = client.submit_otx(JsonBytes::default());
+        if resp.is_ok() {
+            return (ckb, mercury, service);
+        } else {
+            sleep(Duration::from_secs(RPC_TRY_INTERVAL_SECS))
+        }
     }
-    (ckb, mercury, service)
+    teardown(vec![ckb, mercury, service]);
+    panic!("Setup test environment failed");
 }

@@ -31,11 +31,13 @@ wallet = { path = "./wallet"}
 [workspace]
 members = [
     "common-lib",
-    "wallet",
-    "service",
-    
     "open-tx",
-
     "otx-transaction-pool",
+    "service",
+    "wallet",
+
 ]
-exclude = ["./mercury"]
+exclude = [
+    "./mercury", 
+    "./service_payment"
+]
