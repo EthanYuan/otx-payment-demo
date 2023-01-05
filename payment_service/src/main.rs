@@ -1,6 +1,6 @@
-use common_lib::const_definition::SERVICE_URI;
 use otx_transaction_pool::rpc::OtxPoolRpc;
 use otx_transaction_pool::rpc::OtxPoolRpcImpl;
+use utils::const_definition::SERVICE_URI;
 
 use anyhow::Result;
 use jsonrpc_core::IoHandler;
@@ -27,11 +27,9 @@ fn main() -> Result<()> {
 pub fn start() -> Result<()> {
     let rpc_impl = OtxPoolRpcImpl::new();
 
-    let bind = SERVICE_URI;
-    let bind: Vec<&str> = bind.split("//").collect();
+    let bind: Vec<&str> = SERVICE_URI.split("//").collect();
     let bind_addr: SocketAddr = bind[1].parse()?;
 
-    print!("bind_addr: {:?}", bind_addr);
     let mut io_handler = IoHandler::new();
     io_handler.extend_with(rpc_impl.to_delegate());
     let server = ServerBuilder::new(io_handler)

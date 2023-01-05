@@ -22,22 +22,22 @@ serde_json = "1.0"
 common = { path = "./mercury/common"}
 core-rpc-types = { path = "./mercury/core/rpc/types"}
 
-common-lib = { path = "./common-lib" }
+aggregator = { path = "./aggregator" }
+utils = { path = "./utils" }
 open-tx = { path = "./open-tx" }
 otx-transaction-pool = { path = "./otx-transaction-pool" }
-service = { path = "./service" }
 wallet = { path = "./wallet"}
 
 [workspace]
 members = [
-    "common-lib",
+    "aggregator",
     "open-tx",
     "otx-transaction-pool",
-    "service",
+    "utils",
     "wallet",
 
 ]
 exclude = [
     "./mercury", 
-    "./service_payment"
+    "./payment_service"
 ]

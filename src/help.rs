@@ -1,12 +1,12 @@
-use common_lib::client::ckb_client::CkbRpcClient;
-use common_lib::client::mercury_client::MercuryRpcClient;
-use common_lib::client::service_client::ServiceRpcClient;
-use common_lib::const_definition::{
+use utils::client::ckb_client::CkbRpcClient;
+use utils::client::mercury_client::MercuryRpcClient;
+use utils::client::service_client::ServiceRpcClient;
+use utils::const_definition::{
     ANYONE_CAN_PAY_DEVNET_TYPE_HASH, CHEQUE_DEVNET_TYPE_HASH, CKB_URI, DAO_DEVNET_TYPE_HASH,
     MERCURY_URI, PW_LOCK_DEVNET_TYPE_HASH, RPC_TRY_COUNT, RPC_TRY_INTERVAL_SECS, SERVICE_URI,
     SIGHASH_TYPE_HASH, XUDT_DEVNET_TYPE_HASH,
 };
-use common_lib::instruction::{
+use utils::instruction::{
     ckb::generate_blocks, ckb::unlock_frozen_capacity_in_genesis, command::run_command_spawn,
 };
 
@@ -108,7 +108,7 @@ pub(crate) fn start_mercury(ckb: Child) -> (Child, Child) {
 pub(crate) fn start_service_payment(ckb: Child, mercury: Child) -> (Child, Child, Child) {
     let service = run_command_spawn(
         "cargo",
-        vec!["run", "--manifest-path", "service_payment/Cargo.toml"],
+        vec!["run", "--manifest-path", "payment_service/Cargo.toml"],
     );
     let service = if let Ok(service) = service {
         service

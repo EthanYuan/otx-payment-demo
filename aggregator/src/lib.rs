@@ -1,7 +1,7 @@
-use common_lib::build_tx::{add_input, add_output, sighash_sign};
-use common_lib::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
-use common_lib::lock::omni::{build_cell_dep, TxInfo};
-use common_lib::lock::secp::generate_rand_secp_address_pk_pair;
+use utils::build_tx::{add_input, add_output, sighash_sign};
+use utils::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
+use utils::lock::omni::{build_cell_dep, TxInfo};
+use utils::lock::secp::generate_rand_secp_address_pk_pair;
 
 use anyhow::{anyhow, Result};
 use ckb_jsonrpc_types as json_types;

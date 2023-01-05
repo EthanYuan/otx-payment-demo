@@ -1,9 +1,9 @@
 use super::super::IntegrationTest;
 
-use common_lib::client::ckb_cli_client::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
-use common_lib::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
-use common_lib::instruction::ckb::dump_data;
-use common_lib::lock::secp::generate_rand_secp_address_pk_pair;
+use utils::client::ckb_cli_client::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
+use utils::const_definition::{CKB_URI, OMNI_OPENTX_TX_HASH, OMNI_OPENTX_TX_IDX};
+use utils::instruction::ckb::dump_data;
+use utils::lock::secp::generate_rand_secp_address_pk_pair;
 
 use anyhow::{anyhow, Result};
 use ckb_crypto::secp::Pubkey;

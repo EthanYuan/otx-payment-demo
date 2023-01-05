@@ -1,7 +1,7 @@
 use super::super::IntegrationTest;
 
-use common_lib::client::service_client::ServiceRpcClient;
-use common_lib::const_definition::SERVICE_URI;
+use utils::client::service_client::ServiceRpcClient;
+use utils::const_definition::SERVICE_URI;
 
 use ckb_jsonrpc_types::JsonBytes;
 

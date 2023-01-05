@@ -1,5 +1,5 @@
 [package]
-name = "service"
+name = "aggregator"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,13 +10,5 @@ anyhow = "1.0"
 ckb-jsonrpc-types = "0.105"
 ckb-sdk = { git = "https://github.com/EthanYuan/ckb-sdk-rust.git", branch = "opentx_sign_tx_ethan"}
 ckb-types = "0.105"
-ctrlc = "3.2.3"
-env_logger = "0.9.3"
-log = "0.4.17"
-jsonrpc-core = "18.0"
-jsonrpc-derive = "18.0"
-jsonrpc-http-server = "18.0"
-jsonrpc-server-utils = "18.0"
 
-common-lib = { path = "../common-lib"}
-otx-transaction-pool = { path = "../otx-transaction-pool" }
+utils = { path = "../utils"}

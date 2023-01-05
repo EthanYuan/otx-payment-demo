@@ -1,14 +1,14 @@
 use super::super::IntegrationTest;
 
-use common_lib::client::ckb_cli_client::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
-use common_lib::client::mercury_client::MercuryRpcClient;
-use common_lib::const_definition::{
+use aggregator::{AddInputArgs, AddOutputArgs, OtxService};
+use utils::client::ckb_cli_client::{ckb_cli_get_capacity, ckb_cli_transfer_ckb};
+use utils::client::mercury_client::MercuryRpcClient;
+use utils::const_definition::{
     CKB_URI, MERCURY_URI, UDT_1_HOLDER_SECP_ADDRESS, XUDT_DEVNET_TYPE_HASH,
 };
-use common_lib::instruction::ckb::dump_data;
-use common_lib::instruction::mercury::prepare_udt;
-use common_lib::lock::omni::{MultiSigArgs, TxInfo};
-use service::{AddInputArgs, AddOutputArgs, OtxService};
+use utils::instruction::ckb::dump_data;
+use utils::instruction::mercury::prepare_udt;
+use utils::lock::omni::{MultiSigArgs, TxInfo};
 use wallet::{GenOpenTxArgs, Wallet};
 
 use anyhow::Result;
