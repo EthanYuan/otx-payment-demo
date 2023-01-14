@@ -3,16 +3,22 @@ use super::constant::key_type::{
     OTX_OUTPUT_DATA, OTX_OUTPUT_LOCK_ARGS, OTX_OUTPUT_LOCK_CODE_HASH, OTX_OUTPUT_LOCK_HASH_TYPE,
     OTX_OUTPUT_TYPE_ARGS, OTX_OUTPUT_TYPE_CODE_HASH, OTX_OUTPUT_TYPE_HASH_TYPE, OTX_WITNESS_RAW,
 };
+use crate::error::OtxError;
 use crate::types::packed::{self, OpenTransactionBuilder, OtxMapBuilder, OtxMapVecBuilder};
 
-use ckb_jsonrpc_types::{CellDep, CellInput, CellOutput, JsonBytes, Uint32};
-use ckb_types::core::{DepType, ScriptHashType};
+use ckb_jsonrpc_types::{
+    CellDep, CellInput, CellOutput, DepType, JsonBytes, OutPoint, Script, Uint32,
+};
+use ckb_types::core::{self, ScriptHashType};
 use ckb_types::{self, prelude::*, H256};
 use serde::{Deserialize, Serialize};
 
 pub type HeaderDep = H256;
 pub type Witness = JsonBytes;
 pub type OutputData = JsonBytes;
+
+use std::collections::HashSet;
+use std::slice::Iter;
 
 #[derive(Clone, Default, Serialize, Deserialize, PartialEq, Eq, Hash, Debug)]
 pub struct OtxKeyPair {
@@ -83,12 +89,12 @@ impl From<packed::OtxMapVec> for OtxMapVec {
 
 #[derive(Clone, Default, Serialize, Deserialize, PartialEq, Eq, Hash, Debug)]
 pub struct OpenTransaction {
-    meta: OtxMap,
-    cell_deps: OtxMapVec,
-    header_deps: OtxMapVec,
-    inputs: OtxMapVec,
-    witnesses: OtxMapVec,
-    outputs: OtxMapVec,
+    pub meta: OtxMap,
+    pub cell_deps: OtxMapVec,
+    pub header_deps: OtxMapVec,
+    pub inputs: OtxMapVec,
+    pub witnesses: OtxMapVec,
+    pub outputs: OtxMapVec,
 }
 
 impl OpenTransaction {
@@ -148,6 +154,20 @@ impl IntoIterator for OtxMap {
     }
 }
 
+impl OtxMap {
+    fn iter(&self) -> Iter<OtxKeyPair> {
+        self.0.iter()
+    }
+
+    fn get(&self, index: usize) -> Option<&OtxKeyPair> {
+        self.0.get(index)
+    }
+
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
 impl From<Vec<OtxKeyPair>> for OtxMap {
     fn from(vec: Vec<OtxKeyPair>) -> Self {
         OtxMap(vec)
@@ -175,14 +195,51 @@ impl From<CellDep> for OtxMap {
             None,
             JsonBytes::from_bytes(out_point.as_bytes()),
         );
-        let dep_type: DepType = cell_dep.dep_type.into();
-        let dep_type: packed::Byte = dep_type.into();
+        let dep_type: core::DepType = cell_dep.dep_type.into();
+        let dep_type: ckb_types::packed::Byte = dep_type.into();
         let dep_type = OtxKeyPair::new(
             OTX_CELL_DEP_TYPE.into(),
             None,
             JsonBytes::from_bytes(dep_type.as_bytes()),
         );
         vec![out_point, dep_type].into()
+    }
+}
+
+impl TryFrom<OtxMap> for CellDep {
+    type Error = OtxError;
+    fn try_from(map: OtxMap) -> Result<Self, Self::Error> {
+        if !has_unique_elements(&map) {
+            return Err(OtxError::OtxMapHasDuplicateKeypair("CellDep".to_string()));
+        }
+        if map.len() != 2 {
+            return Err(OtxError::OtxMapParseFailed("CellDep".to_string()));
+        }
+
+        let out_point = map
+            .get(0)
+            .filter(|keypair| keypair.key_type.value() == OTX_OUTPOINT)
+            .ok_or_else(|| OtxError::OtxMapParseMissingField(OTX_OUTPOINT.to_string()))?;
+        let out_point: OutPoint =
+            ckb_types::packed::OutPoint::from_slice(out_point.value_data.as_bytes())
+                .map_err(|e| OtxError::OtxMapParseFailed(e.to_string()))?
+                .into();
+
+        let dep_type = map
+            .get(1)
+            .filter(|keypair| keypair.key_type.value() == OTX_CELL_DEP_TYPE)
+            .ok_or_else(|| OtxError::OtxMapParseMissingField(OTX_CELL_DEP_TYPE.to_string()))?;
+        let dep_type: ckb_types::core::DepType =
+            packed::Byte::from_slice(dep_type.value_data.as_bytes())
+                .map_err(|e| OtxError::OtxMapParseFailed(e.to_string()))?
+                .try_into()
+                .map_err(|_| OtxError::OtxMapParseFailed("CellDep".to_string()))?;
+        let dep_type: DepType = dep_type.into();
+
+        Ok(CellDep {
+            out_point,
+            dep_type,
+        })
     }
 }
 
@@ -197,10 +254,51 @@ impl From<HeaderDep> for OtxMap {
     }
 }
 
+impl TryFrom<OtxMap> for HeaderDep {
+    type Error = OtxError;
+    fn try_from(map: OtxMap) -> Result<Self, Self::Error> {
+        if !has_unique_elements(&map) {
+            return Err(OtxError::OtxMapHasDuplicateKeypair("HeaderDep".to_string()));
+        }
+        if map.len() != 1 {
+            return Err(OtxError::OtxMapParseFailed("HeaderDep".to_string()));
+        }
+
+        let header_dep = map
+            .get(0)
+            .filter(|keypair| keypair.key_type.value() == OTX_HEADER_DEP_HASH)
+            .ok_or_else(|| OtxError::OtxMapParseMissingField(OTX_HEADER_DEP_HASH.to_string()))?;
+        let header_dep = HeaderDep::from_slice(header_dep.value_data.as_bytes())
+            .map_err(|e| OtxError::OtxMapParseFailed(e.to_string()))?;
+
+        Ok(header_dep)
+    }
+}
+
 impl From<Witness> for OtxMap {
     fn from(witness: Witness) -> Self {
         let witness = OtxKeyPair::new(OTX_WITNESS_RAW.into(), None, witness);
         vec![witness].into()
+    }
+}
+
+impl TryFrom<OtxMap> for Witness {
+    type Error = OtxError;
+    fn try_from(map: OtxMap) -> Result<Self, Self::Error> {
+        if !has_unique_elements(&map) {
+            return Err(OtxError::OtxMapHasDuplicateKeypair("Witness".to_string()));
+        }
+        if map.len() != 1 {
+            return Err(OtxError::OtxMapParseFailed("Witness".to_string()));
+        }
+
+        let witness = map
+            .get(0)
+            .filter(|keypair| keypair.key_type.value() == OTX_WITNESS_RAW)
+            .ok_or_else(|| OtxError::OtxMapParseMissingField(OTX_WITNESS_RAW.to_string()))?;
+        let witness = witness.value_data.clone();
+
+        Ok(witness)
     }
 }
 
@@ -219,6 +317,42 @@ impl From<CellInput> for OtxMap {
             JsonBytes::from_bytes(since.as_bytes()),
         );
         vec![previous_output, since].into()
+    }
+}
+
+impl TryFrom<OtxMap> for CellInput {
+    type Error = OtxError;
+    fn try_from(map: OtxMap) -> Result<Self, Self::Error> {
+        if !has_unique_elements(&map) {
+            return Err(OtxError::OtxMapHasDuplicateKeypair("CellInput".to_string()));
+        }
+
+        // OtxMap has at least two fields related to CellInput
+        if map.len() < 2 {
+            return Err(OtxError::OtxMapParseFailed("CellInput".to_string()));
+        }
+
+        let previous_output = map
+            .get(0)
+            .filter(|keypair| keypair.key_type.value() == OTX_OUTPOINT)
+            .ok_or_else(|| OtxError::OtxMapParseMissingField(OTX_OUTPOINT.to_string()))?;
+        let previous_output: OutPoint =
+            ckb_types::packed::OutPoint::from_slice(previous_output.value_data.as_bytes())
+                .map_err(|e| OtxError::OtxMapParseFailed(e.to_string()))?
+                .into();
+
+        let since = map
+            .get(1)
+            .filter(|keypair| keypair.key_type.value() == OTX_INPUT_SINCE)
+            .ok_or_else(|| OtxError::OtxMapParseMissingField(OTX_INPUT_SINCE.to_string()))?;
+        let since = ckb_types::packed::Uint64::from_slice(since.value_data.as_bytes())
+            .map_err(|e| OtxError::OtxMapParseFailed(e.to_string()))?
+            .unpack();
+
+        Ok(CellInput {
+            since,
+            previous_output,
+        })
     }
 }
 
@@ -268,4 +402,141 @@ impl From<(CellOutput, OutputData)> for OtxMap {
 
         map.into()
     }
+}
+
+impl TryFrom<OtxMap> for (CellOutput, OutputData) {
+    type Error = OtxError;
+    fn try_from(map: OtxMap) -> Result<Self, Self::Error> {
+        if !has_unique_elements(&map) {
+            return Err(OtxError::OtxMapHasDuplicateKeypair(
+                "CellOutput".to_string(),
+            ));
+        }
+
+        // OtxMap has at least 5 fields related to CellOutput and OutputData
+        if map.len() < 5 {
+            return Err(OtxError::OtxMapParseFailed(
+                "CellOutput and OutputData".to_string(),
+            ));
+        }
+
+        // capacity
+        let capacity = map
+            .get(0)
+            .filter(|keypair| keypair.key_type.value() == OTX_OUTPUT_CAPACITY)
+            .ok_or_else(|| OtxError::OtxMapParseMissingField(OTX_OUTPUT_CAPACITY.to_string()))?;
+        let capacity = ckb_types::packed::Uint64::from_slice(capacity.value_data.as_bytes())
+            .map_err(|e| OtxError::OtxMapParseFailed(e.to_string()))?
+            .unpack();
+
+        // lock code hash
+        let lock_code_hash = map
+            .get(1)
+            .filter(|keypair| keypair.key_type.value() == OTX_OUTPUT_LOCK_CODE_HASH)
+            .ok_or_else(|| {
+                OtxError::OtxMapParseMissingField(OTX_OUTPUT_LOCK_CODE_HASH.to_string())
+            })?;
+        let lock_code_hash =
+            ckb_types::packed::Byte32::from_slice(lock_code_hash.value_data.as_bytes())
+                .map_err(|e| OtxError::OtxMapParseFailed(e.to_string()))?
+                .unpack();
+
+        // lock hash type
+        let lock_hash_type = map
+            .get(2)
+            .filter(|keypair| keypair.key_type.value() == OTX_OUTPUT_LOCK_HASH_TYPE)
+            .ok_or_else(|| {
+                OtxError::OtxMapParseMissingField(OTX_OUTPUT_LOCK_CODE_HASH.to_string())
+            })?;
+        let lock_hash_type: u8 = packed::Byte::from_slice(lock_hash_type.value_data.as_bytes())
+            .map_err(|e| OtxError::OtxMapParseFailed(e.to_string()))?
+            .into();
+        let lock_hash_type: ScriptHashType = lock_hash_type
+            .try_into()
+            .map_err(|_| OtxError::OtxMapParseFailed("ScriptHashType".to_string()))?;
+
+        // lock args
+        let lock_args = &map
+            .get(3)
+            .filter(|keypair| keypair.key_type.value() == OTX_OUTPUT_LOCK_ARGS)
+            .ok_or_else(|| OtxError::OtxMapParseMissingField(OTX_OUTPUT_LOCK_ARGS.to_string()))?
+            .value_data;
+
+        let (type_, output_data) = if map.len() == 5 {
+            // output data
+            let output_data = &map
+                .get(4)
+                .filter(|keypair| keypair.key_type.value() == OTX_OUTPUT_DATA)
+                .ok_or_else(|| OtxError::OtxMapParseMissingField(OTX_OUTPUT_DATA.to_string()))?
+                .value_data;
+
+            (None, output_data)
+        } else {
+            // type code hash
+            let type_code_hash = map
+                .get(4)
+                .filter(|keypair| keypair.key_type.value() == OTX_OUTPUT_TYPE_CODE_HASH)
+                .ok_or_else(|| {
+                    OtxError::OtxMapParseMissingField(OTX_OUTPUT_TYPE_CODE_HASH.to_string())
+                })?;
+            let type_code_hash =
+                ckb_types::packed::Byte32::from_slice(type_code_hash.value_data.as_bytes())
+                    .map_err(|e| OtxError::OtxMapParseFailed(e.to_string()))?
+                    .unpack();
+
+            // type hash type
+            let type_hash_type = map
+                .get(5)
+                .filter(|keypair| keypair.key_type.value() == OTX_OUTPUT_TYPE_HASH_TYPE)
+                .ok_or_else(|| {
+                    OtxError::OtxMapParseMissingField(OTX_OUTPUT_TYPE_HASH_TYPE.to_string())
+                })?;
+            let type_hash_type: u8 = packed::Byte::from_slice(type_hash_type.value_data.as_bytes())
+                .map_err(|e| OtxError::OtxMapParseFailed(e.to_string()))?
+                .into();
+            let type_hash_type: ScriptHashType = type_hash_type
+                .try_into()
+                .map_err(|_| OtxError::OtxMapParseFailed("ScriptHashType".to_string()))?;
+
+            // type args
+            let type_args = &map
+                .get(6)
+                .filter(|keypair| keypair.key_type.value() == OTX_OUTPUT_TYPE_ARGS)
+                .ok_or_else(|| OtxError::OtxMapParseMissingField(OTX_OUTPUT_TYPE_ARGS.to_string()))?
+                .value_data;
+
+            // output data
+            let output_data = &map
+                .get(7)
+                .filter(|keypair| keypair.key_type.value() == OTX_OUTPUT_DATA)
+                .ok_or_else(|| OtxError::OtxMapParseMissingField(OTX_OUTPUT_DATA.to_string()))?
+                .value_data;
+
+            (
+                Some(Script {
+                    code_hash: type_code_hash,
+                    hash_type: type_hash_type.into(),
+                    args: type_args.to_owned(),
+                }),
+                output_data,
+            )
+        };
+
+        let cell_output = CellOutput {
+            capacity,
+            lock: Script {
+                code_hash: lock_code_hash,
+                hash_type: lock_hash_type.into(),
+                args: lock_args.to_owned(),
+            },
+            type_,
+        };
+
+        Ok((cell_output, output_data.to_owned()))
+    }
+}
+
+fn has_unique_elements(iter: &OtxMap) -> bool {
+    let mut uniq = HashSet::new();
+    iter.iter().all(|pair| uniq.insert(pair.key_type))
 }

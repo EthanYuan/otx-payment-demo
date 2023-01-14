@@ -1,9 +1,12 @@
+use super::{HeaderDep, OutputData, Witness};
 use crate::error::OtxError;
 use crate::jsonrpc_types::constant::key_type::OTX_META_VERSION;
 use crate::jsonrpc_types::{OpenTransaction, OtxKeyPair, OtxMap};
 
 use anyhow::Result;
-use ckb_jsonrpc_types::{JsonBytes, TransactionView, Uint32};
+use ckb_jsonrpc_types::{CellDep, CellInput, CellOutput, JsonBytes, TransactionView, Uint32};
+use ckb_types::constants::TX_VERSION;
+use ckb_types::core::TransactionBuilder;
 use ckb_types::prelude::{Entity, Pack};
 
 pub fn tx_view_to_otx(
@@ -61,6 +64,51 @@ pub fn tx_view_to_otx(
     ))
 }
 
-pub fn otx_to_tx_view(_tx_view: OpenTransaction) -> Result<TransactionView> {
-    todo!()
+pub fn extract_ckb_tx(otx: OpenTransaction) -> Result<TransactionView, OtxError> {
+    let witnesses = otx
+        .witnesses
+        .into_iter()
+        .map(|witness| witness.try_into())
+        .collect::<Result<Vec<Witness>, _>>()?;
+
+    let inputs = otx
+        .inputs
+        .into_iter()
+        .map(TryInto::try_into)
+        .collect::<Result<Vec<CellInput>, _>>()?;
+
+    let outputs: Vec<(CellOutput, OutputData)> =
+        otx.outputs
+            .into_iter()
+            .map(TryInto::try_into)
+            .collect::<Result<Vec<(CellOutput, OutputData)>, _>>()?;
+    let (outputs, outputs_data): (Vec<_>, Vec<_>) =
+        outputs.into_iter().map(|(a, b)| (a, b)).unzip();
+
+    let cell_deps = otx
+        .cell_deps
+        .into_iter()
+        .map(TryInto::try_into)
+        .collect::<Result<Vec<CellDep>, _>>()?;
+
+    let header_deps = otx
+        .header_deps
+        .into_iter()
+        .map(TryInto::try_into)
+        .collect::<Result<Vec<HeaderDep>, _>>()?;
+
+    let tx_view = TransactionBuilder::default()
+        .version(TX_VERSION.pack())
+        .witnesses(
+            witnesses
+                .into_iter()
+                .map(|witness| witness.as_bytes().pack()),
+        )
+        .inputs(inputs.into_iter().map(Into::into))
+        .outputs(outputs.into_iter().map(Into::into))
+        .outputs_data(outputs_data.into_iter().map(Into::into))
+        .cell_deps(cell_deps.into_iter().map(Into::into))
+        .header_deps(header_deps.into_iter().map(|h| h.pack()))
+        .build();
+    Ok(tx_view.into())
 }
