@@ -1,5 +1,5 @@
-use otx_transaction_pool::rpc::OtxPoolRpc;
-use otx_transaction_pool::rpc::OtxPoolRpcImpl;
+use otx_pool::rpc::OtxPoolRpc;
+use otx_pool::rpc::OtxPoolRpcImpl;
 use utils::const_definition::SERVICE_URI;
 
 use anyhow::Result;

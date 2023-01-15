@@ -1382,7 +1382,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "otx-transaction-pool"
+name = "otx-pool"
 version = "0.1.0"
 dependencies = [
  "ckb-jsonrpc-types",
@@ -1440,25 +1440,6 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "windows-sys 0.42.0",
-]
-
-[[package]]
-name = "payment_service"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "ckb-jsonrpc-types",
- "ckb-sdk",
- "ckb-types",
- "ctrlc",
- "env_logger",
- "jsonrpc-core",
- "jsonrpc-derive",
- "jsonrpc-http-server",
- "jsonrpc-server-utils",
- "log",
- "otx-transaction-pool",
- "utils",
 ]
 
 [[package]]
@@ -1889,6 +1870,25 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "service"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ckb-jsonrpc-types",
+ "ckb-sdk",
+ "ckb-types",
+ "ctrlc",
+ "env_logger",
+ "jsonrpc-core",
+ "jsonrpc-derive",
+ "jsonrpc-http-server",
+ "jsonrpc-server-utils",
+ "log",
+ "otx-pool",
+ "utils",
 ]
 
 [[package]]

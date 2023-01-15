@@ -1,5 +1,5 @@
 [package]
-name = "payment_service"
+name = "service"
 version = "0.1.0"
 edition = "2021"
 
@@ -19,4 +19,4 @@ jsonrpc-http-server = "18.0"
 jsonrpc-server-utils = "18.0"
 
 utils = { path = "../utils"}
-otx-transaction-pool = { path = "../otx-transaction-pool" }
+otx-pool = { path = "../otx-pool" }
