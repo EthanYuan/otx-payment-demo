@@ -1,5 +1,9 @@
 use super::otx_pool::OtxPool;
 
+use ckb_types::prelude::Entity;
+use otx_format::jsonrpc_types::OpenTransaction;
+use otx_format::types::packed;
+
 use ckb_jsonrpc_types::JsonBytes;
 use ckb_types::H256;
 use jsonrpc_core::Result as RpcResult;
@@ -33,7 +37,8 @@ impl Default for OtxPoolRpcImpl {
 }
 
 impl OtxPoolRpc for OtxPoolRpcImpl {
-    fn submit_otx(&self, _otx: JsonBytes) -> RpcResult<String> {
+    fn submit_otx(&self, otx: JsonBytes) -> RpcResult<String> {
+        // let otx = packed::OpenTransaction::from_slice(otx.as_bytes()).map_err(|e| e.to_string())?;
         Ok("submit_otx".to_string())
     }
     fn query_otx_by_id(&self, _id: H256) -> RpcResult<()> {

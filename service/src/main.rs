@@ -1,5 +1,4 @@
-use otx_pool::rpc::OtxPoolRpc;
-use otx_pool::rpc::OtxPoolRpcImpl;
+use otx_pool::rpc::{OtxPoolRpc, OtxPoolRpcImpl};
 use utils::const_definition::SERVICE_URI;
 
 use anyhow::Result;
@@ -25,13 +24,16 @@ fn main() -> Result<()> {
 }
 
 pub fn start() -> Result<()> {
-    let rpc_impl = OtxPoolRpcImpl::new();
-
+    // bind
     let bind: Vec<&str> = SERVICE_URI.split("//").collect();
     let bind_addr: SocketAddr = bind[1].parse()?;
 
+    // handler
+    let rpc_impl = OtxPoolRpcImpl::new();
     let mut io_handler = IoHandler::new();
     io_handler.extend_with(rpc_impl.to_delegate());
+
+    // init server
     let server = ServerBuilder::new(io_handler)
         .cors(DomainsValidation::AllowOnly(vec![
             AccessControlAllowOrigin::Null,
@@ -42,6 +44,7 @@ pub fn start() -> Result<()> {
         .expect("Start Jsonrpc HTTP service");
     log::info!("jsonrpc server started: {}", SERVICE_URI);
 
+    // close
     let (tx, rx) = channel();
     ctrlc::set_handler(move || tx.send(()).unwrap()).unwrap();
     log::info!("Waiting for Ctrl-C...");

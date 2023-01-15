@@ -24,14 +24,14 @@ core-rpc-types = { path = "./mercury/core/rpc/types"}
 
 aggregator = { path = "./aggregator" }
 utils = { path = "./utils" }
-open-tx = { path = "./open-tx" }
+otx-format = { path = "./otx-format" }
 otx-pool = { path = "./otx-pool" }
 wallet = { path = "./wallet"}
 
 [workspace]
 members = [
     "aggregator",
-    "open-tx",
+    "otx-format",
     "otx-pool",
     "utils",
     "wallet",

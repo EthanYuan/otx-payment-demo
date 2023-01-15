@@ -1039,7 +1039,7 @@ dependencies = [
  "common",
  "core-rpc-types",
  "inventory",
- "open-tx",
+ "otx-format",
  "otx-pool",
  "secp256k1 0.24.1",
  "serde",
@@ -1348,19 +1348,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "86f0b0d4bf799edbc74508c1e8bf170ff5f41238e5f8225603ca7caaae2b7860"
 
 [[package]]
-name = "open-tx"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "ckb-jsonrpc-types",
- "ckb-types",
- "derive_more",
- "molecule",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "openssl"
 version = "0.10.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1412,6 +1399,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b7820b9daea5457c9f21c69448905d723fbd21136ccf521748f23fd49e723ee"
 
 [[package]]
+name = "otx-format"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ckb-jsonrpc-types",
+ "ckb-types",
+ "derive_more",
+ "molecule",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "otx-pool"
 version = "0.1.0"
 dependencies = [
@@ -1421,7 +1421,7 @@ dependencies = [
  "jsonrpc-core",
  "jsonrpc-derive",
  "jsonrpc-server-utils",
- "open-tx",
+ "otx-format",
 ]
 
 [[package]]

@@ -13,4 +13,4 @@ jsonrpc-core = "18.0"
 jsonrpc-derive = "18.0"
 jsonrpc-server-utils = "18.0"
 
-open-tx = { path = "../open-tx" }
+otx-format = { path = "../otx-format" }
