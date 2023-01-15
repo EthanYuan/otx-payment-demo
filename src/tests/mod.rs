@@ -1,5 +1,5 @@
+mod otx_service_test;
 mod sdk_open_tx_examples;
-mod service_rpc;
 mod transfer_udt;
 mod user_case;
 

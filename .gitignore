@@ -2,5 +2,5 @@
 /dev_chain/dev/data
 /free-space
 
-# service
-/service/target
+# otx-service
+/otx-service/target

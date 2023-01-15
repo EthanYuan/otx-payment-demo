@@ -1686,6 +1686,8 @@ dependencies = [
  "jsonrpsee-proc-macros",
  "molecule",
  "otx-format",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2627,6 +2629,8 @@ dependencies = [
  "hex",
  "jsonrpc-core",
  "once_cell",
+ "otx-format",
+ "otx-pool",
  "rand 0.8.5",
  "reqwest",
  "secp256k1 0.24.1",

@@ -1629,6 +1629,25 @@ dependencies = [
  "jsonrpsee-proc-macros",
  "molecule",
  "otx-format",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "otx-service"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ckb-jsonrpc-types",
+ "ckb-sdk",
+ "ckb-types",
+ "ctrlc",
+ "env_logger",
+ "jsonrpsee-http-server",
+ "log",
+ "otx-pool",
+ "tokio",
+ "utils",
 ]
 
 [[package]]
@@ -2183,23 +2202,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "service"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "ckb-jsonrpc-types",
- "ckb-sdk",
- "ckb-types",
- "ctrlc",
- "env_logger",
- "jsonrpsee-http-server",
- "log",
- "otx-pool",
- "tokio",
- "utils",
-]
-
-[[package]]
 name = "sha-1"
 version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2581,6 +2583,8 @@ dependencies = [
  "hex",
  "jsonrpc-core",
  "once_cell",
+ "otx-format",
+ "otx-pool",
  "rand 0.8.5",
  "reqwest",
  "secp256k1 0.24.2",

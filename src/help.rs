@@ -15,8 +15,6 @@ use common::lazy::{
     SUDT_CODE_HASH,
 };
 
-use ckb_jsonrpc_types::JsonBytes;
-
 use std::panic;
 use std::process::Child;
 use std::thread::sleep;
@@ -108,7 +106,7 @@ pub(crate) fn start_mercury(ckb: Child) -> (Child, Child) {
 pub(crate) fn start_service_payment(ckb: Child, mercury: Child) -> (Child, Child, Child) {
     let service = run_command_spawn(
         "cargo",
-        vec!["run", "--manifest-path", "service/Cargo.toml"],
+        vec!["run", "--manifest-path", "otx-service/Cargo.toml"],
     );
     let service = if let Ok(service) = service {
         service
@@ -118,8 +116,8 @@ pub(crate) fn start_service_payment(ckb: Child, mercury: Child) -> (Child, Child
     };
     let client = ServiceRpcClient::new(SERVICE_URI.to_string());
     for _try in 0..=RPC_TRY_COUNT {
-        let resp = client.submit_otx(JsonBytes::default());
-        if resp.is_err() {
+        let resp = client.query_otx_by_id(0);
+        if resp.is_ok() {
             return (ckb, mercury, service);
         } else {
             sleep(Duration::from_secs(RPC_TRY_INTERVAL_SECS))
