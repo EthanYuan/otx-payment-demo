@@ -12,5 +12,5 @@ inventory::submit!(IntegrationTest {
 fn service_rpc_test() {
     let service_client = ServiceRpcClient::new(SERVICE_URI.to_string());
     let ret = service_client.submit_otx(JsonBytes::default());
-    println!("{:?}", ret)
+    assert!(ret.is_err())
 }

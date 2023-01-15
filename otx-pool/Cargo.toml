@@ -6,11 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0"
+async-trait = "0.1"
 ckb-jsonrpc-types = "0.105"
 ckb-types = "0.105"
 dashmap = "5.4.0"
-jsonrpc-core = "18.0"
-jsonrpc-derive = "18.0"
-jsonrpc-server-utils = "18.0"
+derive_more = "0.99"
+jsonrpsee = { version = "0.15", features = ["full"] } 
+jsonrpsee-core = "0.15"
+jsonrpsee-proc-macros = "0.15"
+molecule = "=0.7.3"
 
 otx-format = { path = "../otx-format" }

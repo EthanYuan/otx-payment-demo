@@ -119,7 +119,7 @@ pub(crate) fn start_service_payment(ckb: Child, mercury: Child) -> (Child, Child
     let client = ServiceRpcClient::new(SERVICE_URI.to_string());
     for _try in 0..=RPC_TRY_COUNT {
         let resp = client.submit_otx(JsonBytes::default());
-        if resp.is_ok() {
+        if resp.is_err() {
             return (ckb, mercury, service);
         } else {
             sleep(Duration::from_secs(RPC_TRY_INTERVAL_SECS))

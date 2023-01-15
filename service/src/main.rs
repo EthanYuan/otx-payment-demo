@@ -1,16 +1,13 @@
-use otx_pool::rpc::{OtxPoolRpc, OtxPoolRpcImpl};
+use otx_pool::rpc::{OtxPoolRpcImpl, OtxPoolRpcServer};
 use utils::const_definition::SERVICE_URI;
 
-use anyhow::Result;
-use jsonrpc_core::IoHandler;
-use jsonrpc_http_server::ServerBuilder;
-use jsonrpc_server_utils::cors::AccessControlAllowOrigin;
-use jsonrpc_server_utils::hosts::DomainsValidation;
+use jsonrpsee_http_server::HttpServerBuilder;
 
 use std::net::SocketAddr;
 use std::sync::mpsc::channel;
 
-fn main() -> Result<()> {
+#[tokio::main(flavor = "multi_thread")]
+async fn main() {
     if std::env::var("RUST_LOG").is_err() {
         // should recognize RUST_LOG_STYLE environment variable
         env_logger::Builder::from_default_env()
@@ -20,35 +17,34 @@ fn main() -> Result<()> {
         env_logger::init();
     }
 
-    start()
+    start().await;
 }
 
-pub fn start() -> Result<()> {
-    // bind
+pub async fn start() {
+    // bind address
     let bind: Vec<&str> = SERVICE_URI.split("//").collect();
-    let bind_addr: SocketAddr = bind[1].parse()?;
+    let bind_addr: SocketAddr = bind[1].parse().expect("listen address parsed");
 
-    // handler
-    let rpc_impl = OtxPoolRpcImpl::new();
-    let mut io_handler = IoHandler::new();
-    io_handler.extend_with(rpc_impl.to_delegate());
+    // start server
+    let server = HttpServerBuilder::default()
+        .max_response_body_size(u32::MAX)
+        .build(vec![bind_addr].as_slice())
+        .await
+        .expect("build server");
+    let server_handler = server
+        .start(OtxPoolRpcImpl::new().into_rpc())
+        .expect("Start jsonrpc http server");
+    log::info!("OTX jsonrpc server started: {}", SERVICE_URI);
 
-    // init server
-    let server = ServerBuilder::new(io_handler)
-        .cors(DomainsValidation::AllowOnly(vec![
-            AccessControlAllowOrigin::Null,
-            AccessControlAllowOrigin::Any,
-        ]))
-        .health_api(("/ping", "ping"))
-        .start_http(&bind_addr)
-        .expect("Start Jsonrpc HTTP service");
-    log::info!("jsonrpc server started: {}", SERVICE_URI);
-
-    // close
+    // stop
     let (tx, rx) = channel();
     ctrlc::set_handler(move || tx.send(()).unwrap()).unwrap();
     log::info!("Waiting for Ctrl-C...");
     rx.recv().expect("Could not receive from channel.");
-    server.close();
-    Ok(())
+    server_handler
+        .stop()
+        .expect("stop server handle")
+        .await
+        .expect("join server handle");
+    log::info!("Closing!");
 }
