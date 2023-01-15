@@ -116,7 +116,7 @@ pub(crate) fn start_service_payment(ckb: Child, mercury: Child) -> (Child, Child
     };
     let client = ServiceRpcClient::new(SERVICE_URI.to_string());
     for _try in 0..=RPC_TRY_COUNT {
-        let resp = client.query_otx_by_id(0);
+        let resp = client.query_otx_by_id(u64::MAX);
         if resp.is_ok() {
             return (ckb, mercury, service);
         } else {

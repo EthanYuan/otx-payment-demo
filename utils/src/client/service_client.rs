@@ -16,7 +16,7 @@ impl ServiceRpcClient {
         ServiceRpcClient { client }
     }
 
-    pub fn submit_otx(&self, otx: JsonBytes) -> Result<String> {
+    pub fn submit_otx(&self, otx: JsonBytes) -> Result<u64> {
         request(&self.client, "submit_otx", vec![otx])
     }
 

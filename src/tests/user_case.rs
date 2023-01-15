@@ -71,7 +71,7 @@ fn z_aggregate_otxs_omni_lock() {
     z_service.committer.send_tx(full_tx).unwrap();
 }
 
-fn alice_build_signed_otx() -> Result<TxInfo> {
+pub fn alice_build_signed_otx() -> Result<TxInfo> {
     // 1. init Alice's wallet instance
     let alice_wallet = Wallet::init_account();
     let alice_omni_address = alice_wallet.get_omni_otx_address();
