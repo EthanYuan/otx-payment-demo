@@ -206,6 +206,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "ckb-async-runtime"
+version = "0.105.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63fe6fb61dc22b48eecda3c5ee1168c75e3c489f4771c6e40f48e397b8f1eeaf"
+dependencies = [
+ "ckb-logger",
+ "ckb-spawn",
+ "ckb-stop-handler",
+ "tokio",
+]
+
+[[package]]
 name = "ckb-channel"
 version = "0.105.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -307,6 +319,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ckb-logger"
+version = "0.105.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a312280df7ba55dc99cf8584ac4d3c9e3b85297a896202c76a21dfd43ffb0ea"
+dependencies = [
+ "log",
+]
+
+[[package]]
 name = "ckb-merkle-mountain-range"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -404,6 +425,24 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-util 0.6.10",
+]
+
+[[package]]
+name = "ckb-spawn"
+version = "0.105.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cdc97c9d714c5ef08d67b75b95fc9e6cd4689487a1fe9912cf06d5f40a5c18c6"
+
+[[package]]
+name = "ckb-stop-handler"
+version = "0.105.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6110662e025f5097517cb2314b786c4859df90b60302f9a75e3d40efb9e5ae29"
+dependencies = [
+ "ckb-channel",
+ "ckb-logger",
+ "parking_lot",
+ "tokio",
 ]
 
 [[package]]
@@ -1620,17 +1659,21 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "ckb-async-runtime",
  "ckb-jsonrpc-types",
+ "ckb-stop-handler",
  "ckb-types",
  "dashmap",
  "derive_more",
  "jsonrpsee",
  "jsonrpsee-core",
  "jsonrpsee-proc-macros",
+ "log",
  "molecule",
  "otx-format",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -1638,6 +1681,7 @@ name = "otx-service"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "ckb-async-runtime",
  "ckb-jsonrpc-types",
  "ckb-sdk",
  "ckb-types",
@@ -2225,6 +2269,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "signal-hook-registry"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e51e73328dc4ac0c7ccbda3a494dfa03df1de2f46018127f60c693f2648455b0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "siphasher"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2374,7 +2427,9 @@ dependencies = [
  "memchr",
  "mio",
  "num_cpus",
+ "parking_lot",
  "pin-project-lite",
+ "signal-hook-registry",
  "socket2",
  "tokio-macros",
  "windows-sys 0.42.0",

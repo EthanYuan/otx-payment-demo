@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
+ckb-async-runtime = "0.105"
 ckb-jsonrpc-types = "0.105"
 ckb-sdk = { git = "https://github.com/EthanYuan/ckb-sdk-rust.git", branch = "opentx_sign_tx_ethan"}
 ckb-types = "0.105"
@@ -14,7 +15,7 @@ ctrlc = "3.2.3"
 env_logger = "0.9.3"
 log = "0.4.17"
 jsonrpsee-http-server = "0.15"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "process", "sync"] }
 
 utils = { path = "../utils"}
 otx-pool = { path = "../otx-pool" }

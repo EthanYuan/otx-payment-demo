@@ -1,7 +1,7 @@
 use super::{request, RpcClient};
 
 use otx_format::jsonrpc_types::OpenTransaction;
-use otx_pool::otx_pool::Id;
+use otx_pool::pool::Id;
 
 use anyhow::Result;
 use ckb_jsonrpc_types::JsonBytes;

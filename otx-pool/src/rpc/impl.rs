@@ -1,5 +1,5 @@
 use super::{OtxPoolRpcImpl, OtxPoolRpcServer};
-use crate::otx_pool::Id;
+use crate::pool::Id;
 
 use otx_format::jsonrpc_types::OpenTransaction;
 

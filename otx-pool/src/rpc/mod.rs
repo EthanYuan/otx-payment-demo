@@ -1,6 +1,7 @@
 mod r#impl;
 
-use super::otx_pool::{Id, OtxPool};
+use super::pool::{Id, OtxPool};
+use crate::notify::NotifyController;
 
 use otx_format::jsonrpc_types::OpenTransaction;
 
@@ -22,15 +23,8 @@ pub struct OtxPoolRpcImpl {
 }
 
 impl OtxPoolRpcImpl {
-    pub fn new() -> Self {
-        OtxPoolRpcImpl {
-            otx_pool: OtxPool::new(),
-        }
-    }
-}
-
-impl Default for OtxPoolRpcImpl {
-    fn default() -> Self {
-        Self::new()
+    pub fn new(notify_ctrl: NotifyController) -> Self {
+        let otx_pool = OtxPool::new(notify_ctrl);
+        OtxPoolRpcImpl { otx_pool }
     }
 }

@@ -1,10 +1,19 @@
-use otx_pool::rpc::{OtxPoolRpcImpl, OtxPoolRpcServer};
+use otx_pool::{
+    notify::NotifyService,
+    rpc::{OtxPoolRpcImpl, OtxPoolRpcServer},
+};
 use utils::const_definition::SERVICE_URI;
 
+use ckb_async_runtime::new_global_runtime;
 use jsonrpsee_http_server::HttpServerBuilder;
+pub use tokio;
+pub use tokio::runtime::Runtime;
 
 use std::net::SocketAddr;
-use std::sync::mpsc::channel;
+use std::time::Duration;
+
+pub const MESSAGE_CHANNEL_SIZE: usize = 1024;
+const RUNTIME_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(1);
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
@@ -21,23 +30,52 @@ async fn main() {
 }
 
 pub async fn start() {
+    // runtime handle
+    let (handle, runtime) = new_global_runtime();
+
     // bind address
     let bind: Vec<&str> = SERVICE_URI.split("//").collect();
     let bind_addr: SocketAddr = bind[1].parse().expect("listen address parsed");
 
-    // start server
+    // start notify service
+    let notify_service = NotifyService::new();
+    let notify_ctrl = notify_service.start(handle);
+
+    // interval loop
+    // let interval_child = thread::spawn(move || {
+    //     let mut interval = time::interval(Duration::from_millis(10));
+
+    //     interval.tick().await; // ticks immediately
+    //     interval.tick().await; // ticks after 10ms
+    //     interval.tick().await; // ticks after 10ms
+    //     thread_tx.send(id).unwrap();
+
+    //     // Sending is a non-blocking operation, the thread will continue
+    //     // immediately after sending its message
+    //     println!("thread {} finished", id);
+    // });
+
+    // init otx pool rpc
+    let otx_pool_rpc = OtxPoolRpcImpl::new(notify_ctrl.clone());
+
+    // start rpc server
     let server = HttpServerBuilder::default()
         .max_response_body_size(u32::MAX)
         .build(vec![bind_addr].as_slice())
         .await
         .expect("build server");
     let server_handler = server
-        .start(OtxPoolRpcImpl::new().into_rpc())
+        .start(otx_pool_rpc.into_rpc())
         .expect("Start jsonrpc http server");
     log::info!("OTX jsonrpc server started: {}", SERVICE_URI);
 
-    // stop
-    let (tx, rx) = channel();
+    // test
+    let mut rx = notify_ctrl.subscribe_new_open_tx("main-test").await;
+    let a = rx.recv().await;
+    println!("{:?}", a);
+
+    // stop rpc server
+    let (tx, rx) = std::sync::mpsc::channel();
     ctrlc::set_handler(move || tx.send(()).unwrap()).unwrap();
     log::info!("Waiting for Ctrl-C...");
     rx.recv().expect("Could not receive from channel.");
@@ -47,4 +85,6 @@ pub async fn start() {
         .await
         .expect("join server handle");
     log::info!("Closing!");
+
+    runtime.shutdown_timeout(RUNTIME_SHUTDOWN_TIMEOUT);
 }
