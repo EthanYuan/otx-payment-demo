@@ -1,6 +1,6 @@
 use super::{HeaderDep, OutputData, Witness};
 use crate::error::OtxFormatError;
-use crate::jsonrpc_types::constant::key_type::OTX_META_VERSION;
+use crate::jsonrpc_types::constant::basic_keys::OTX_META_VERSION;
 use crate::jsonrpc_types::{OpenTransaction, OtxKeyPair, OtxMap};
 
 use anyhow::Result;
