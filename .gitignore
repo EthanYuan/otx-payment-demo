@@ -4,3 +4,5 @@
 
 # otx-service
 /otx-service/target
+/otx-service/plugins
+/otx-service/plugins_inactive

@@ -1654,6 +1654,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "otx-plugin-protocol"
+version = "0.1.0"
+dependencies = [
+ "otx-format",
+ "serde",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
 name = "otx-pool"
 version = "0.1.0"
 dependencies = [
@@ -1663,6 +1673,7 @@ dependencies = [
  "ckb-jsonrpc-types",
  "ckb-stop-handler",
  "ckb-types",
+ "crossbeam-channel",
  "dashmap",
  "derive_more",
  "jsonrpsee",
@@ -1671,6 +1682,7 @@ dependencies = [
  "log",
  "molecule",
  "otx-format",
+ "otx-plugin-protocol",
  "serde",
  "serde_json",
  "tokio",

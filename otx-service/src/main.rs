@@ -1,5 +1,6 @@
 use otx_pool::{
     notify::NotifyService,
+    plugin::manager::PluginManager,
     rpc::{OtxPoolRpcImpl, OtxPoolRpcServer},
 };
 use utils::const_definition::SERVICE_URI;
@@ -9,11 +10,12 @@ use jsonrpsee_http_server::HttpServerBuilder;
 pub use tokio;
 pub use tokio::runtime::Runtime;
 
-use std::net::SocketAddr;
 use std::time::Duration;
+use std::{net::SocketAddr, path::Path};
 
 pub const MESSAGE_CHANNEL_SIZE: usize = 1024;
 const RUNTIME_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(1);
+pub const PLUGINS_DIRNAME: &str = "plugins";
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
@@ -69,10 +71,16 @@ pub async fn start() {
         .expect("Start jsonrpc http server");
     log::info!("OTX jsonrpc server started: {}", SERVICE_URI);
 
+    // init plugins
+    let plugin_manager = PluginManager::init(Path::new("./")).unwrap();
+    let plugins = plugin_manager.plugin_configs();
+    println!("{:?}", plugins.get("plugin demo"));
+    log::info!("plugins count: {:?}", plugins.len());
+
     // test
     let mut rx = notify_ctrl.subscribe_new_open_tx("main-test").await;
-    let a = rx.recv().await;
-    println!("{:?}", a);
+    let otx = rx.recv().await;
+    println!("{:?}", otx);
 
     // stop rpc server
     let (tx, rx) = std::sync::mpsc::channel();

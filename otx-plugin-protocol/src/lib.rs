@@ -25,6 +25,7 @@ pub enum MessageFromHost {
     // Response
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum MessageFromPlugin {
     // Notify
 
