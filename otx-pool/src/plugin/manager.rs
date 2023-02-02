@@ -25,13 +25,13 @@ pub struct PluginManager {
 
 impl PluginManager {
     pub fn load_plugin_configs(
-        ckb_cli_dir: &Path,
+        host_dir: &Path,
     ) -> Result<HashMap<String, (PluginState, PluginInfo)>, io::Error> {
-        let plugin_dir = ckb_cli_dir.join(PLUGINS_DIRNAME);
+        let plugin_dir = host_dir.join(PLUGINS_DIRNAME);
         if !plugin_dir.exists() {
             fs::create_dir_all(&plugin_dir)?;
         }
-        let inactive_plugin_dir = plugin_dir.join(INACTIVE_DIRNAME);
+        let inactive_plugin_dir = host_dir.join(INACTIVE_DIRNAME);
         if !inactive_plugin_dir.exists() {
             fs::create_dir_all(&inactive_plugin_dir)?;
         }

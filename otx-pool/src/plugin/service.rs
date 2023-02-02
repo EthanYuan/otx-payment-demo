@@ -28,6 +28,12 @@ impl ServiceProvider {
                     arguments,
                 }) => {
                     log::debug!("ServiceProvider received a request: {:?}", arguments);
+                    match arguments {
+                        MessageFromPlugin::DiscardOtx(id) => {
+                            println!("{:?}", id);
+                        }
+                        _ => unreachable!(),
+                    }
                 }
             }
         });

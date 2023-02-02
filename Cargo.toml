@@ -1,5 +1,5 @@
 [package]
-name = "integration"
+name = "otx-demo"
 version = "0.1.0"
 authors = ["Nervos Network"]
 edition = "2021"

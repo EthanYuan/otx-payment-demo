@@ -1196,31 +1196,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "integration"
-version = "0.1.0"
-dependencies = [
- "aggregator",
- "anyhow",
- "ckb-crypto",
- "ckb-hash",
- "ckb-jsonrpc-types",
- "ckb-sdk",
- "ckb-types",
- "clap",
- "common",
- "core-rpc-types",
- "inventory",
- "otx-format",
- "otx-plugin-protocol",
- "otx-pool",
- "secp256k1 0.24.1",
- "serde",
- "serde_json",
- "utils",
- "wallet",
-]
-
-[[package]]
 name = "inventory"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1697,6 +1672,31 @@ name = "os_str_bytes"
 version = "6.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b7820b9daea5457c9f21c69448905d723fbd21136ccf521748f23fd49e723ee"
+
+[[package]]
+name = "otx-demo"
+version = "0.1.0"
+dependencies = [
+ "aggregator",
+ "anyhow",
+ "ckb-crypto",
+ "ckb-hash",
+ "ckb-jsonrpc-types",
+ "ckb-sdk",
+ "ckb-types",
+ "clap",
+ "common",
+ "core-rpc-types",
+ "inventory",
+ "otx-format",
+ "otx-plugin-protocol",
+ "otx-pool",
+ "secp256k1 0.24.1",
+ "serde",
+ "serde_json",
+ "utils",
+ "wallet",
+]
 
 [[package]]
 name = "otx-format"

@@ -4,11 +4,10 @@ use serde_derive::{Deserialize, Serialize};
 
 pub type Id = u64;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PluginInfo {
-    pub name: String,
-    pub description: String,
-    pub version: String,
+pub enum MessageType {
+    Request,
+    Response,
+    Notify,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -25,10 +24,21 @@ pub enum MessageFromHost {
     // Response
 }
 
+impl MessageFromHost {
+    pub fn get_message_type(&self) -> MessageType {
+        match self {
+            Self::NewOtx(_)
+            | Self::NewInterval
+            | Self::OtxPoolStart
+            | Self::OtxPoolStop
+            | Self::DeleteOtx(_) => MessageType::Notify,
+            Self::GetPluginInfo => MessageType::Request,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum MessageFromPlugin {
-    // Notify
-
     // Response
     Ok,
     Error(String),
@@ -39,4 +49,22 @@ pub enum MessageFromPlugin {
     DiscardOtx(Id),
     ModifyOtx((Id, OpenTransaction)),
     SendCkbTx(OpenTransaction),
+}
+
+impl MessageFromPlugin {
+    pub fn get_message_type(&self) -> MessageType {
+        match self {
+            Self::Ok | Self::Error(_) | Self::PluginInfo(_) => MessageType::Response,
+            Self::NewOtx(_) | Self::DiscardOtx(_) | Self::ModifyOtx(_) | Self::SendCkbTx(_) => {
+                MessageType::Request
+            }
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PluginInfo {
+    pub name: String,
+    pub description: String,
+    pub version: String,
 }

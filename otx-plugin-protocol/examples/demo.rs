@@ -1,5 +1,4 @@
 /// NOTE: this example is for plugin integration tests
-
 use otx_plugin_protocol::{MessageFromHost, MessageFromPlugin, PluginInfo};
 
 use std::io::{self, Write};
