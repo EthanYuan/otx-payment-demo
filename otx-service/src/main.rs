@@ -7,14 +7,12 @@ use utils::const_definition::SERVICE_URI;
 
 use ckb_async_runtime::new_global_runtime;
 use jsonrpsee_http_server::HttpServerBuilder;
-pub use tokio;
-pub use tokio::runtime::Runtime;
+use tokio::time::{self, Duration};
 
-use std::time::Duration;
 use std::{net::SocketAddr, path::Path};
 
 pub const MESSAGE_CHANNEL_SIZE: usize = 1024;
-const RUNTIME_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(1);
+const RUNTIME_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
 pub const PLUGINS_DIRNAME: &str = "plugins";
 
 #[tokio::main(flavor = "multi_thread")]
@@ -41,21 +39,22 @@ pub async fn start() {
 
     // start notify service
     let notify_service = NotifyService::new();
-    let notify_ctrl = notify_service.start(handle);
+    let notify_ctrl = notify_service.start(handle.clone());
 
     // interval loop
-    // let interval_child = thread::spawn(move || {
-    //     let mut interval = time::interval(Duration::from_millis(10));
+    let notifier = notify_ctrl.clone();
+    let interval_handler = handle.spawn(async move {
+        let mut interval = time::interval(Duration::from_secs(1));
+        loop {
+            interval.tick().await;
+            notifier.notify_interval();
+        }
+    });
 
-    //     interval.tick().await; // ticks immediately
-    //     interval.tick().await; // ticks after 10ms
-    //     interval.tick().await; // ticks after 10ms
-    //     thread_tx.send(id).unwrap();
-
-    //     // Sending is a non-blocking operation, the thread will continue
-    //     // immediately after sending its message
-    //     println!("thread {} finished", id);
-    // });
+    // init plugins
+    let plugin_manager = PluginManager::init(notify_ctrl.clone(), Path::new("./")).unwrap();
+    let plugins = plugin_manager.plugin_configs();
+    log::info!("actived plugins count: {:?}", plugins.len());
 
     // init otx pool rpc
     let otx_pool_rpc = OtxPoolRpcImpl::new(notify_ctrl.clone());
@@ -71,28 +70,24 @@ pub async fn start() {
         .expect("Start jsonrpc http server");
     log::info!("OTX jsonrpc server started: {}", SERVICE_URI);
 
-    // init plugins
-    let plugin_manager = PluginManager::init(Path::new("./")).unwrap();
-    let plugins = plugin_manager.plugin_configs();
-    println!("{:?}", plugins.get("plugin demo"));
-    log::info!("plugins count: {:?}", plugins.len());
-
     // test
-    let mut rx = notify_ctrl.subscribe_new_open_tx("main-test").await;
-    let otx = rx.recv().await;
-    println!("{:?}", otx);
+    // let mut rx = notify_ctrl.subscribe_new_open_tx("main-test").await;
+    // let otx = rx.recv().await;
+    // println!("{:?}", otx);
 
-    // stop rpc server
+    // stop
     let (tx, rx) = std::sync::mpsc::channel();
     ctrlc::set_handler(move || tx.send(()).unwrap()).unwrap();
     log::info!("Waiting for Ctrl-C...");
-    rx.recv().expect("Could not receive from channel.");
+    rx.recv().expect("Receive Ctrl-C from channel.");
+
+    interval_handler.abort();
     server_handler
         .stop()
         .expect("stop server handle")
         .await
         .expect("join server handle");
-    log::info!("Closing!");
-
     runtime.shutdown_timeout(RUNTIME_SHUTDOWN_TIMEOUT);
+
+    log::info!("Closing!");
 }

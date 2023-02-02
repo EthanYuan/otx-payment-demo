@@ -1,5 +1,7 @@
 use otx_plugin_protocol::PluginInfo;
 
+use crate::notify::NotifyController;
+
 use super::plugin_proxy::{PluginProxy, PluginState};
 use super::service::ServiceProvider;
 
@@ -60,7 +62,7 @@ impl PluginManager {
         Ok(plugin_configs)
     }
 
-    pub fn init(host_dir: &Path) -> Result<PluginManager, String> {
+    pub fn init(_notify_ctrl: NotifyController, host_dir: &Path) -> Result<PluginManager, String> {
         let plugin_dir = host_dir.join(PLUGINS_DIRNAME);
         let plugin_configs = Self::load_plugin_configs(host_dir).map_err(|err| err.to_string())?;
 
