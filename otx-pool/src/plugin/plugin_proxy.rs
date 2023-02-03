@@ -3,7 +3,7 @@ use super::service::ServiceHandler;
 use otx_plugin_protocol::{MessageFromHost, MessageFromPlugin, MessageType, PluginInfo};
 
 use ckb_types::core::service::Request;
-use crossbeam_channel::{bounded, select, Sender};
+use crossbeam_channel::{bounded, select, unbounded, Sender};
 
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
@@ -11,6 +11,7 @@ use std::process::{Child, ChildStdin, Command, Stdio};
 use std::thread::{self, JoinHandle};
 
 pub type RequestHandler = Sender<Request<(u64, MessageFromHost), (u64, MessageFromPlugin)>>;
+pub type NotifyHandler = Sender<MessageFromHost>;
 
 #[derive(Clone, Debug)]
 pub struct PluginState {
@@ -31,15 +32,15 @@ pub struct PluginProcess {
     _plugin_process: Child,
     _stdin_thread: JoinHandle<()>,
     _stdout_thread: JoinHandle<()>,
-
-    // Send message to stdin thread, and expect a response from stdout thread
-    _plugin_handler: RequestHandler,
 }
 
 pub struct PluginProxy {
     _state: PluginState,
     _info: PluginInfo,
     _process: PluginProcess,
+    // Send message to stdin thread, and expect a response from stdout thread
+    _request_handler: RequestHandler,
+    _nofify_handler: NotifyHandler,
 }
 
 impl PluginProxy {
@@ -107,16 +108,23 @@ impl PluginProxy {
             .take()
             .ok_or_else(|| String::from("Get stdout failed"))?;
 
-        let (request_sender, request_receiver) = bounded(1);
-        let (stdout_sender, stdout_receiver) = bounded(1);
-        let (service_sender, service_receiver) = bounded(1);
+        // the host request channel receives request from host to plugin
+        let (host_request_sender, host_request_receiver) = bounded(1);
+
+        // the plugin response channel receives response from plugin,
+        // it cooperates with the host request channel to complete the request-response pair
+        let (plugin_response_sender, plugin_response_receiver) = bounded(1);
+
+        // the channel sends responses from the host to plugin
+        let (host_response_sender, host_response_receiver) = bounded(1);
+
+        // the channel sends notifications from the host to plugin
+        let (host_notify_sender, host_notify_receiver) = unbounded();
 
         let plugin_name = plugin_info.name.clone();
-        let plugin_name_2 = plugin_info.name.clone();
-
         // this thread processes stdin information from host to plugin
         let stdin_thread = thread::spawn(move || {
-            let handle_service_channel_msg =
+            let handle_host_response_msg =
                 |stdin: &mut ChildStdin, (id, response)| -> Result<bool, String> {
                     let response_string =
                         serde_json::to_string(&(id, response)).expect("Serialize response error");
@@ -128,11 +136,21 @@ impl PluginProxy {
                     Ok(false)
                 };
 
+            let handle_host_notify_msg = |stdin: &mut ChildStdin, msg| -> Result<bool, String> {
+                let notify_string = serde_json::to_string(&msg).expect("Serialize response error");
+                log::debug!("Send response to plugin: {}", notify_string);
+                stdin
+                    .write_all(format!("{}\n", notify_string).as_bytes())
+                    .map_err(|err| err.to_string())?;
+                stdin.flush().map_err(|err| err.to_string())?;
+                Ok(false)
+            };
+
             let mut do_select = || -> Result<bool, String> {
                 select! {
                     // request from host to plugin
-                    recv(request_receiver) -> msg_result => {
-                        match msg_result {
+                    recv(host_request_receiver) -> msg => {
+                        match msg {
                             Ok(Request { responder, arguments }) => {
                                 let request_string = serde_json::to_string(&arguments).expect("Serialize request error");
                                 log::debug!("Send request to plugin: {}", request_string);
@@ -140,8 +158,8 @@ impl PluginProxy {
                                 stdin.flush().map_err(|err| err.to_string())?;
                                 loop {
                                     select!{
-                                        recv(stdout_receiver) -> msg_result => {
-                                            match msg_result {
+                                        recv(plugin_response_receiver) -> msg => {
+                                            match msg {
                                                 Ok(response) => {
                                                     responder.send(response).map_err(|err| err.to_string())?;
                                                     return Ok(false);
@@ -151,10 +169,20 @@ impl PluginProxy {
                                                 }
                                             }
                                         },
-                                        recv(service_receiver) -> msg_result => {
-                                            match msg_result {
+                                        recv(host_response_receiver) -> msg => {
+                                            match msg {
                                                 Ok(msg) => {
-                                                    handle_service_channel_msg(&mut stdin, msg)?;
+                                                    handle_host_response_msg(&mut stdin, msg)?;
+                                                },
+                                                Err(err) => {
+                                                    return Err(err.to_string());
+                                                }
+                                            }
+                                        },
+                                        recv(host_notify_receiver) -> msg => {
+                                            match msg {
+                                                Ok(msg) => {
+                                                    handle_host_notify_msg(&mut stdin, msg)?;
                                                 },
                                                 Err(err) => {
                                                     return Err(err.to_string());
@@ -168,9 +196,16 @@ impl PluginProxy {
                         }
                     }
                     // repsonse from plugin to host (ServiceProvider)
-                    recv(service_receiver) -> msg_result => {
+                    recv(host_response_receiver) -> msg_result => {
                         match msg_result {
-                            Ok(msg) => handle_service_channel_msg(&mut stdin, msg),
+                            Ok(msg) => handle_host_response_msg(&mut stdin, msg),
+                            Err(err) => Err(err.to_string())
+                        }
+                    }
+                    // notify from plugin to host
+                    recv(host_notify_receiver) -> msg_result => {
+                        match msg_result {
+                            Ok(msg) => handle_host_notify_msg(&mut stdin, msg),
                             Err(err) => Err(err.to_string())
                         }
                     }
@@ -190,6 +225,7 @@ impl PluginProxy {
             }
         });
 
+        let plugin_name = plugin_info.name.clone();
         let mut buf_reader = BufReader::new(stdout);
         let stdout_thread = thread::spawn(move || {
             let mut do_recv = || -> Result<bool, String> {
@@ -209,7 +245,7 @@ impl PluginProxy {
                     MessageType::Response => {
                         // Receive response from plugin
                         log::debug!("Receive response from plugin: {}", content.trim());
-                        stdout_sender
+                        plugin_response_sender
                             .send((id, message_from_plugin))
                             .map_err(|err| err.to_string())?;
                     }
@@ -222,7 +258,7 @@ impl PluginProxy {
                                 || String::from("Send request to ServiceProvider failed"),
                             )?;
                         log::debug!("Received response from ServiceProvider");
-                        service_sender
+                        host_response_sender
                             .send((id, message_from_host))
                             .map_err(|err| err.to_string())?;
                     }
@@ -236,12 +272,12 @@ impl PluginProxy {
             loop {
                 match do_recv() {
                     Ok(true) => {
-                        log::info!("plugin {} quit", plugin_name_2);
+                        log::info!("plugin {} quit", plugin_name);
                         break;
                     }
                     Ok(false) => {}
                     Err(err) => {
-                        log::warn!("plugin {} stdout error: {}", plugin_name_2, err);
+                        log::warn!("plugin {} stdout error: {}", plugin_name, err);
                         break;
                     }
                 }
@@ -252,13 +288,14 @@ impl PluginProxy {
             _plugin_process: child,
             _stdin_thread: stdin_thread,
             _stdout_thread: stdout_thread,
-            _plugin_handler: request_sender,
         };
 
         Ok(PluginProxy {
             _state: plugin_state,
             _info: plugin_info,
             _process: process,
+            _request_handler: host_request_sender,
+            _nofify_handler: host_notify_sender,
         })
     }
 }
