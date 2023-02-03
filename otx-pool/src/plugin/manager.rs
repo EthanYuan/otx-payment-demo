@@ -1,4 +1,4 @@
-use super::plugin_proxy::NotifyHandler;
+use super::plugin_proxy::MsgHandler;
 use super::plugin_proxy::{PluginProxy, PluginState};
 use super::service::ServiceProvider;
 use crate::notify::NotifyController;
@@ -91,9 +91,9 @@ impl PluginManager {
             }
         }
 
-        let plugins: Vec<(String, NotifyHandler)> = plugin_proxies
+        let plugins: Vec<(String, MsgHandler)> = plugin_proxies
             .iter()
-            .map(|(name, p)| (name.to_owned(), p.get_notify_handler()))
+            .map(|(name, p)| (name.to_owned(), p.get_msg_handler()))
             .collect();
 
         // subscribe pool event
@@ -103,8 +103,8 @@ impl PluginManager {
             loop {
                 tokio::select! {
                     Some(()) = interval_receiver.recv() => {
-                        plugins.iter().for_each(|(_,notify_handler)| {
-                            let _ = notify_handler.send(MessageFromHost::NewInterval);
+                        plugins.iter().for_each(|(_, notify_handler)| {
+                            let _ = notify_handler.send((0, MessageFromHost::NewInterval));
                         })
                     }
                 }

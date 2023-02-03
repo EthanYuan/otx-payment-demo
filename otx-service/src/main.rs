@@ -1,7 +1,7 @@
 use otx_pool::{
     notify::NotifyService,
     plugin::manager::PluginManager,
-    rpc::{OtxPoolRpcImpl, OtxPoolRpc},
+    rpc::{OtxPoolRpc, OtxPoolRpcImpl},
 };
 use utils::const_definition::SERVICE_URI;
 

@@ -11,7 +11,7 @@ use std::process::{Child, ChildStdin, Command, Stdio};
 use std::thread::{self, JoinHandle};
 
 pub type RequestHandler = Sender<Request<(u64, MessageFromHost), (u64, MessageFromPlugin)>>;
-pub type NotifyHandler = Sender<MessageFromHost>;
+pub type MsgHandler = Sender<(u64, MessageFromHost)>;
 
 #[derive(Clone, Debug)]
 pub struct PluginState {
@@ -43,12 +43,12 @@ pub struct PluginProxy {
     _request_handler: RequestHandler,
 
     /// Send notifaction to stdin thread.
-    _nofify_handler: NotifyHandler,
+    _msg_handler: MsgHandler,
 }
 
 impl PluginProxy {
-    pub fn get_notify_handler(&self) -> NotifyHandler {
-        self._nofify_handler.clone()
+    pub fn get_msg_handler(&self) -> MsgHandler {
+        self._msg_handler.clone()
     }
 
     /// This function will create a temporary plugin process to fetch plugin information.
@@ -122,16 +122,13 @@ impl PluginProxy {
         // it cooperates with the host request channel to complete the request-response pair
         let (plugin_response_sender, plugin_response_receiver) = bounded(1);
 
-        // the channel sends responses from the host to plugin
-        let (host_response_sender, host_response_receiver) = bounded(1);
-
-        // the channel sends notifications from the host to plugin
-        let (host_notify_sender, host_notify_receiver) = unbounded();
+        // the channel sends notifications or responses from the host to plugin
+        let (host_msg_sender, host_msg_receiver) = unbounded();
 
         let plugin_name = plugin_info.name.clone();
         // this thread processes stdin information from host to plugin
         let stdin_thread = thread::spawn(move || {
-            let handle_host_response_msg =
+            let handle_host_msg =
                 |stdin: &mut ChildStdin, (id, response)| -> Result<bool, String> {
                     let response_string =
                         serde_json::to_string(&(id, response)).expect("Serialize response error");
@@ -142,16 +139,6 @@ impl PluginProxy {
                     stdin.flush().map_err(|err| err.to_string())?;
                     Ok(false)
                 };
-
-            let handle_host_notify_msg = |stdin: &mut ChildStdin, msg| -> Result<bool, String> {
-                let notify_string = serde_json::to_string(&msg).expect("Serialize response error");
-                log::debug!("Send response to plugin: {}", notify_string);
-                stdin
-                    .write_all(format!("{}\n", notify_string).as_bytes())
-                    .map_err(|err| err.to_string())?;
-                stdin.flush().map_err(|err| err.to_string())?;
-                Ok(false)
-            };
 
             let mut do_select = || -> Result<bool, String> {
                 select! {
@@ -176,20 +163,10 @@ impl PluginProxy {
                                                 }
                                             }
                                         },
-                                        recv(host_response_receiver) -> msg => {
+                                        recv(host_msg_receiver) -> msg => {
                                             match msg {
                                                 Ok(msg) => {
-                                                    handle_host_response_msg(&mut stdin, msg)?;
-                                                },
-                                                Err(err) => {
-                                                    return Err(err.to_string());
-                                                }
-                                            }
-                                        },
-                                        recv(host_notify_receiver) -> msg => {
-                                            match msg {
-                                                Ok(msg) => {
-                                                    handle_host_notify_msg(&mut stdin, msg)?;
+                                                    handle_host_msg(&mut stdin, msg)?;
                                                 },
                                                 Err(err) => {
                                                     return Err(err.to_string());
@@ -203,16 +180,9 @@ impl PluginProxy {
                         }
                     }
                     // repsonse from plugin to host (ServiceProvider)
-                    recv(host_response_receiver) -> msg_result => {
+                    recv(host_msg_receiver) -> msg_result => {
                         match msg_result {
-                            Ok(msg) => handle_host_response_msg(&mut stdin, msg),
-                            Err(err) => Err(err.to_string())
-                        }
-                    }
-                    // notify from plugin to host
-                    recv(host_notify_receiver) -> msg_result => {
-                        match msg_result {
-                            Ok(msg) => handle_host_notify_msg(&mut stdin, msg),
+                            Ok(msg) => handle_host_msg(&mut stdin, msg),
                             Err(err) => Err(err.to_string())
                         }
                     }
@@ -233,6 +203,7 @@ impl PluginProxy {
         });
 
         let plugin_name = plugin_info.name.clone();
+        let msg_sender = host_msg_sender.clone();
         let mut buf_reader = BufReader::new(stdout);
         let stdout_thread = thread::spawn(move || {
             let mut do_recv = || -> Result<bool, String> {
@@ -265,7 +236,7 @@ impl PluginProxy {
                                 || String::from("Send request to ServiceProvider failed"),
                             )?;
                         log::debug!("Received response from ServiceProvider");
-                        host_response_sender
+                        msg_sender
                             .send((id, message_from_host))
                             .map_err(|err| err.to_string())?;
                     }
@@ -302,7 +273,7 @@ impl PluginProxy {
             _info: plugin_info,
             _process: process,
             _request_handler: host_request_sender,
-            _nofify_handler: host_notify_sender,
+            _msg_handler: host_msg_sender,
         })
     }
 }
