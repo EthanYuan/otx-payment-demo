@@ -1,9 +1,13 @@
-use otx_plugin_protocol::PluginInfo;
-
-use crate::notify::NotifyController;
-
+use super::plugin_proxy::NotifyHandler;
 use super::plugin_proxy::{PluginProxy, PluginState};
 use super::service::ServiceProvider;
+use crate::notify::NotifyController;
+
+use otx_plugin_protocol::MessageFromHost;
+
+use ckb_async_runtime::Handle;
+use otx_plugin_protocol::PluginInfo;
+use tokio::task::JoinHandle;
 
 use std::collections::HashMap;
 use std::fs;
@@ -23,6 +27,8 @@ pub struct PluginManager {
     _plugin_proxies: HashMap<String, PluginProxy>,
 
     _service_provider: ServiceProvider,
+
+    // _notify_thread: JoinHandle<()>,
 }
 
 impl PluginManager {
@@ -62,7 +68,11 @@ impl PluginManager {
         Ok(plugin_configs)
     }
 
-    pub fn init(_notify_ctrl: NotifyController, host_dir: &Path) -> Result<PluginManager, String> {
+    pub fn init(
+        handle: Handle,
+        notify_ctrl: NotifyController,
+        host_dir: &Path,
+    ) -> Result<PluginManager, String> {
         let plugin_dir = host_dir.join(PLUGINS_DIRNAME);
         let plugin_configs = Self::load_plugin_configs(host_dir).map_err(|err| err.to_string())?;
 
@@ -82,11 +92,32 @@ impl PluginManager {
             }
         }
 
+        let plugins: Vec<(String, NotifyHandler)> = plugin_proxies
+            .iter()
+            .map(|(name, p)| (name.to_owned(), p.get_notify_handler()))
+            .collect();
+
+        // subscribe pool event
+        // let mut interval_receiver =
+        //     handle.block_on(notify_ctrl.subscribe_interval("plugin manager"));
+        // let notify_thread = handle.spawn(async move {
+        //     loop {
+        //         tokio::select! {
+        //             Some(()) = interval_receiver.recv() => {
+        //                 plugins.iter().for_each(|(_,notify_handler)| {
+        //                     let _ = notify_handler.send(MessageFromHost::NewInterval);
+        //                 })
+        //             }
+        //         }
+        //     }
+        // });
+
         Ok(PluginManager {
             _plugin_dir: plugin_dir,
             plugin_configs,
             _plugin_proxies: plugin_proxies,
             _service_provider: service_provider,
+            // _notify_thread: notify_thread,
         })
     }
 

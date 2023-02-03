@@ -38,12 +38,19 @@ pub struct PluginProxy {
     _state: PluginState,
     _info: PluginInfo,
     _process: PluginProcess,
-    // Send message to stdin thread, and expect a response from stdout thread
+
+    /// Send request to stdin thread, and expect a response from stdout thread.
     _request_handler: RequestHandler,
+
+    /// Send notifaction to stdin thread.
     _nofify_handler: NotifyHandler,
 }
 
 impl PluginProxy {
+    pub fn get_notify_handler(&self) -> NotifyHandler {
+        self._nofify_handler.clone()
+    }
+
     /// This function will create a temporary plugin process to fetch plugin information.
     pub fn get_plug_info(binary_path: PathBuf) -> Result<PluginInfo, String> {
         let mut child = Command::new(&binary_path)

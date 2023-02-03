@@ -52,7 +52,7 @@ pub async fn start() {
     });
 
     // init plugins
-    let plugin_manager = PluginManager::init(notify_ctrl.clone(), Path::new("./")).unwrap();
+    let plugin_manager = PluginManager::init(handle, notify_ctrl.clone(), Path::new("./")).unwrap();
     let plugins = plugin_manager.plugin_configs();
     log::info!("actived plugins count: {:?}", plugins.len());
 
