@@ -2,7 +2,7 @@ use otx_format::error::{OtxError, OtxFormatError};
 
 use anyhow::Result;
 use derive_more::Display;
-use jsonrpsee_core::Error;
+use jsonrpc_core::{Error, ErrorCode};
 use molecule::error::VerificationError;
 use serde::{Deserialize, Serialize};
 
@@ -15,11 +15,11 @@ pub struct OtxRpcError(pub Box<dyn OtxError + Send>);
 
 impl From<OtxRpcError> for Error {
     fn from(err: OtxRpcError) -> Error {
-        Error::Custom(format!(
-            "Error({}): {:?}",
-            err.0.err_code(),
-            err.0.message()
-        ))
+        Error {
+            code: ErrorCode::ServerError(err.0.err_code()),
+            message: err.0.message(),
+            data: None,
+        }
     }
 }
 
@@ -42,7 +42,7 @@ pub enum OtxPoolError {
 }
 
 impl OtxError for OtxPoolError {
-    fn err_code(&self) -> i32 {
+    fn err_code(&self) -> i64 {
         match self {
             OtxPoolError::OtxAlreadyExists => -13100,
         }

@@ -27,8 +27,7 @@ pub struct PluginManager {
     _plugin_proxies: HashMap<String, PluginProxy>,
 
     _service_provider: ServiceProvider,
-
-    // _notify_thread: JoinHandle<()>,
+    _notify_thread: JoinHandle<()>,
 }
 
 impl PluginManager {
@@ -98,26 +97,26 @@ impl PluginManager {
             .collect();
 
         // subscribe pool event
-        // let mut interval_receiver =
-        //     handle.block_on(notify_ctrl.subscribe_interval("plugin manager"));
-        // let notify_thread = handle.spawn(async move {
-        //     loop {
-        //         tokio::select! {
-        //             Some(()) = interval_receiver.recv() => {
-        //                 plugins.iter().for_each(|(_,notify_handler)| {
-        //                     let _ = notify_handler.send(MessageFromHost::NewInterval);
-        //                 })
-        //             }
-        //         }
-        //     }
-        // });
+        let mut interval_receiver =
+            handle.block_on(notify_ctrl.subscribe_interval("plugin manager"));
+        let notify_thread = handle.spawn(async move {
+            loop {
+                tokio::select! {
+                    Some(()) = interval_receiver.recv() => {
+                        plugins.iter().for_each(|(_,notify_handler)| {
+                            let _ = notify_handler.send(MessageFromHost::NewInterval);
+                        })
+                    }
+                }
+            }
+        });
 
         Ok(PluginManager {
             _plugin_dir: plugin_dir,
             plugin_configs,
             _plugin_proxies: plugin_proxies,
             _service_provider: service_provider,
-            // _notify_thread: notify_thread,
+            _notify_thread: notify_thread,
         })
     }
 

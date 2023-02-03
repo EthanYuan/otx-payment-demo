@@ -6,16 +6,16 @@ use crate::notify::NotifyController;
 use otx_format::jsonrpc_types::OpenTransaction;
 
 use ckb_jsonrpc_types::JsonBytes;
-use jsonrpsee_core::RpcResult;
-use jsonrpsee_proc_macros::rpc;
+use jsonrpc_core::Result as RpcResult;
+use jsonrpc_derive::rpc;
 
 #[rpc(server)]
 pub trait OtxPoolRpc {
-    #[method(name = "submit_otx")]
-    async fn submit_otx(&self, otx: JsonBytes) -> RpcResult<Id>;
+    #[rpc(name = "submit_otx")]
+    fn submit_otx(&self, otx: JsonBytes) -> RpcResult<Id>;
 
-    #[method(name = "query_otx_by_id")]
-    async fn query_otx_by_id(&self, id: Id) -> RpcResult<Option<OpenTransaction>>;
+    #[rpc(name = "query_otx_by_id")]
+    fn query_otx_by_id(&self, id: Id) -> RpcResult<Option<OpenTransaction>>;
 }
 
 pub struct OtxPoolRpcImpl {

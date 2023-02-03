@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
 
 pub trait OtxError: Debug + Display {
-    fn err_code(&self) -> i32;
+    fn err_code(&self) -> i64;
     fn message(&self) -> String;
 }
 
@@ -25,7 +25,7 @@ pub enum OtxFormatError {
 }
 
 impl OtxError for OtxFormatError {
-    fn err_code(&self) -> i32 {
+    fn err_code(&self) -> i64 {
         match self {
             OtxFormatError::VersionNotSupported(_) => -13010,
             OtxFormatError::OtxMapHasDuplicateKeypair(_) => -13011,
@@ -40,7 +40,7 @@ impl OtxError for OtxFormatError {
 }
 
 impl OtxError for VerificationError {
-    fn err_code(&self) -> i32 {
+    fn err_code(&self) -> i64 {
         match self {
             VerificationError::TotalSizeNotMatch(_, _, _) => -13000,
             VerificationError::HeaderIsBroken(_, _, _) => -13001,

@@ -1,12 +1,16 @@
 use otx_pool::{
     notify::NotifyService,
     plugin::manager::PluginManager,
-    rpc::{OtxPoolRpcImpl, OtxPoolRpcServer},
+    rpc::{OtxPoolRpcImpl, OtxPoolRpc},
 };
 use utils::const_definition::SERVICE_URI;
 
+use anyhow::Result;
 use ckb_async_runtime::new_global_runtime;
-use jsonrpsee_http_server::HttpServerBuilder;
+use jsonrpc_core::IoHandler;
+use jsonrpc_http_server::ServerBuilder;
+use jsonrpc_server_utils::cors::AccessControlAllowOrigin;
+use jsonrpc_server_utils::hosts::DomainsValidation;
 use tokio::time::{self, Duration};
 
 use std::{net::SocketAddr, path::Path};
@@ -15,8 +19,7 @@ pub const MESSAGE_CHANNEL_SIZE: usize = 1024;
 const RUNTIME_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
 pub const PLUGINS_DIRNAME: &str = "plugins";
 
-#[tokio::main(flavor = "multi_thread")]
-async fn main() {
+fn main() -> Result<()> {
     if std::env::var("RUST_LOG").is_err() {
         // should recognize RUST_LOG_STYLE environment variable
         env_logger::Builder::from_default_env()
@@ -26,16 +29,16 @@ async fn main() {
         env_logger::init();
     }
 
-    start().await;
+    start()
 }
 
-pub async fn start() {
+pub fn start() -> Result<()> {
     // runtime handle
     let (handle, runtime) = new_global_runtime();
 
     // bind address
     let bind: Vec<&str> = SERVICE_URI.split("//").collect();
-    let bind_addr: SocketAddr = bind[1].parse().expect("listen address parsed");
+    let bind_addr: SocketAddr = bind[1].parse()?;
 
     // start notify service
     let notify_service = NotifyService::new();
@@ -57,18 +60,20 @@ pub async fn start() {
     log::info!("actived plugins count: {:?}", plugins.len());
 
     // init otx pool rpc
-    let otx_pool_rpc = OtxPoolRpcImpl::new(notify_ctrl.clone());
+    let rpc_impl = OtxPoolRpcImpl::new(notify_ctrl);
+    let mut io_handler = IoHandler::new();
+    io_handler.extend_with(rpc_impl.to_delegate());
 
     // start rpc server
-    let server = HttpServerBuilder::default()
-        .max_response_body_size(u32::MAX)
-        .build(vec![bind_addr].as_slice())
-        .await
-        .expect("build server");
-    let server_handler = server
-        .start(otx_pool_rpc.into_rpc())
-        .expect("Start jsonrpc http server");
-    log::info!("OTX jsonrpc server started: {}", SERVICE_URI);
+    let server = ServerBuilder::new(io_handler)
+        .cors(DomainsValidation::AllowOnly(vec![
+            AccessControlAllowOrigin::Null,
+            AccessControlAllowOrigin::Any,
+        ]))
+        .health_api(("/ping", "ping"))
+        .start_http(&bind_addr)
+        .expect("Start Jsonrpc HTTP service");
+    log::info!("jsonrpc server started: {}", SERVICE_URI);
 
     // test
     // let mut rx = notify_ctrl.subscribe_new_open_tx("main-test").await;
@@ -82,12 +87,10 @@ pub async fn start() {
     rx.recv().expect("Receive Ctrl-C from channel.");
 
     interval_handler.abort();
-    server_handler
-        .stop()
-        .expect("stop server handle")
-        .await
-        .expect("join server handle");
+    server.close();
     runtime.shutdown_timeout(RUNTIME_SHUTDOWN_TIMEOUT);
 
     log::info!("Closing!");
+
+    Ok(())
 }
