@@ -1424,6 +1424,7 @@ dependencies = [
 name = "otx-plugin-protocol"
 version = "0.1.0"
 dependencies = [
+ "log",
  "otx-format",
  "serde",
  "serde_derive",

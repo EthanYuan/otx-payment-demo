@@ -24,13 +24,13 @@ impl ServiceProvider {
                     break;
                 }
                 Ok(Request {
-                    responder: _,
+                    responder,
                     arguments,
                 }) => {
                     log::debug!("ServiceProvider received a request: {:?}", arguments);
                     match arguments {
-                        MessageFromPlugin::DiscardOtx(id) => {
-                            println!("{:?}", id);
+                        MessageFromPlugin::DiscardOtx(_id) => {
+                            let _ = responder.send(MessageFromHost::Ok);
                         }
                         _ => unreachable!(),
                     }

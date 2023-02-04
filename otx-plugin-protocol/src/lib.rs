@@ -21,7 +21,10 @@ pub enum MessageFromHost {
 
     // Request
     GetPluginInfo,
+
     // Response
+    Ok,
+    Error(String),
 }
 
 impl MessageFromHost {
@@ -32,7 +35,7 @@ impl MessageFromHost {
             | Self::OtxPoolStart
             | Self::OtxPoolStop
             | Self::DeleteOtx(_) => MessageType::Notify,
-            Self::GetPluginInfo => MessageType::Request,
+            Self::GetPluginInfo | Self::Ok | Self::Error(_) => MessageType::Request,
         }
     }
 }

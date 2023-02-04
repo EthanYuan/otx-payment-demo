@@ -132,7 +132,7 @@ impl PluginProxy {
                 |stdin: &mut ChildStdin, (id, response)| -> Result<bool, String> {
                     let response_string =
                         serde_json::to_string(&(id, response)).expect("Serialize response error");
-                    log::debug!("Send response to plugin: {}", response_string);
+                    log::debug!("Send response/notification to plugin: {}", response_string);
                     stdin
                         .write_all(format!("{}\n", response_string).as_bytes())
                         .map_err(|err| err.to_string())?;
@@ -179,10 +179,18 @@ impl PluginProxy {
                             Err(err) => Err(err.to_string())
                         }
                     }
-                    // repsonse from plugin to host (ServiceProvider)
-                    recv(host_msg_receiver) -> msg_result => {
-                        match msg_result {
+                    // repsonse/notification from host to plugin
+                    recv(host_msg_receiver) -> msg => {
+                        match msg {
                             Ok(msg) => handle_host_msg(&mut stdin, msg),
+                            Err(err) => Err(err.to_string())
+                        }
+                    }
+                    // ignore the unexpected response from plugin
+                    recv(plugin_response_receiver) -> msg => {
+                        log::debug!("Received unexpected response/notification to plugin: {:?}", msg);
+                        match msg {
+                            Ok(_) => Ok(false),
                             Err(err) => Err(err.to_string())
                         }
                     }
@@ -195,7 +203,7 @@ impl PluginProxy {
                     }
                     Ok(false) => (),
                     Err(err) => {
-                        log::info!("plugin {} stdin error: {}", plugin_name, err);
+                        log::error!("plugin {} stdin error: {}", plugin_name, err);
                         break;
                     }
                 }
@@ -235,7 +243,10 @@ impl PluginProxy {
                             Request::call(&service_handler, message_from_plugin).ok_or_else(
                                 || String::from("Send request to ServiceProvider failed"),
                             )?;
-                        log::debug!("Received response from ServiceProvider");
+                        log::debug!(
+                            "Received response from ServiceProvider: {:?}",
+                            message_from_host
+                        );
                         msg_sender
                             .send((id, message_from_host))
                             .map_err(|err| err.to_string())?;

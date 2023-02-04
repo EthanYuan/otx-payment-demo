@@ -35,7 +35,8 @@ fn handle(msg: MessageFromHost) -> Option<MessageFromPlugin> {
             Some(MessageFromPlugin::PluginInfo(info))
         }
         MessageFromHost::NewInterval => {
-            None
+            log::info!("New interval");
+            Some(MessageFromPlugin::DiscardOtx(0))
         }
         _ => None,
     }

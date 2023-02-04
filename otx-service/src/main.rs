@@ -47,7 +47,7 @@ pub fn start() -> Result<()> {
     // interval loop
     let notifier = notify_ctrl.clone();
     let interval_handler = handle.spawn(async move {
-        let mut interval = time::interval(Duration::from_secs(1));
+        let mut interval = time::interval(Duration::from_secs(5));
         loop {
             interval.tick().await;
             notifier.notify_interval();
