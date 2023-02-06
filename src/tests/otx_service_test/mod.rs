@@ -2,7 +2,7 @@ use super::user_case::alice_build_signed_otx;
 use crate::IntegrationTest;
 
 use ckb_types::prelude::Entity;
-use otx_format::jsonrpc_types::tx_view::{extract_ckb_tx, tx_view_to_otx};
+use otx_format::jsonrpc_types::tx_view::{otx_to_tx_view, tx_view_to_otx};
 use otx_format::types::packed;
 use utils::client::service_client::ServiceRpcClient;
 use utils::const_definition::SERVICE_URI;
@@ -36,6 +36,6 @@ fn test_service_rpc_submit_otx() {
         .submit_otx(JsonBytes::from_bytes(otx.as_bytes()))
         .unwrap();
     let otx = service_client.query_otx_by_id(id).unwrap().unwrap();
-    let tx_view_rebuilt = extract_ckb_tx(otx).unwrap();
+    let tx_view_rebuilt = otx_to_tx_view(otx).unwrap();
     assert_eq!(tx_view, tx_view_rebuilt);
 }

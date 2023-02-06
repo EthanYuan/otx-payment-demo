@@ -57,7 +57,7 @@ pub fn tx_view_to_otx(tx_view: TransactionView) -> Result<OpenTransaction, OtxFo
     ))
 }
 
-pub fn extract_ckb_tx(otx: OpenTransaction) -> Result<TransactionView, OtxFormatError> {
+pub fn otx_to_tx_view(otx: OpenTransaction) -> Result<TransactionView, OtxFormatError> {
     let witnesses = otx
         .witnesses
         .into_iter()
