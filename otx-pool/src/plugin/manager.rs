@@ -49,7 +49,7 @@ impl PluginManager {
                 let path = entry?.path();
                 if path.is_file() {
                     let plugin_state = PluginState::new(path.clone(), *is_active);
-                    match PluginProxy::get_plug_info(path.clone()) {
+                    match PluginProxy::get_plugin_info(path.clone()) {
                         Ok(plugin_info) => {
                             log::info!("Loaded plugin: {}", plugin_info.name);
                             plugin_configs.insert(
@@ -83,6 +83,7 @@ impl PluginManager {
         for (plugin_name, (plugin_state, plugin_info)) in plugin_configs.iter() {
             if plugin_state.is_active {
                 let plugin_proxy = PluginProxy::start_process(
+                    handle.clone(),
                     plugin_state.to_owned(),
                     plugin_info.to_owned(),
                     service_provider.handler().clone(),
@@ -93,7 +94,7 @@ impl PluginManager {
 
         let plugins: Vec<(String, MsgHandler)> = plugin_proxies
             .iter()
-            .map(|(name, p)| (name.to_owned(), p.get_msg_handler()))
+            .map(|(name, p)| (name.to_owned(), p.msg_handler()))
             .collect();
 
         // subscribe pool event

@@ -1,14 +1,15 @@
 use super::service::ServiceHandler;
 
+use ckb_async_runtime::Handle;
 use otx_plugin_protocol::{MessageFromHost, MessageFromPlugin, MessageType, PluginInfo};
 
 use ckb_types::core::service::Request;
 use crossbeam_channel::{bounded, select, unbounded, Sender};
+use tokio::task::JoinHandle;
 
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Command, Stdio};
-use std::thread::{self, JoinHandle};
 
 pub type RequestHandler = Sender<Request<(u64, MessageFromHost), (u64, MessageFromPlugin)>>;
 pub type MsgHandler = Sender<(u64, MessageFromHost)>;
@@ -42,17 +43,17 @@ pub struct PluginProxy {
     /// Send request to stdin thread, and expect a response from stdout thread.
     _request_handler: RequestHandler,
 
-    /// Send notifaction to stdin thread.
-    _msg_handler: MsgHandler,
+    /// Send notifaction/response to stdin thread.
+    msg_handler: MsgHandler,
 }
 
 impl PluginProxy {
-    pub fn get_msg_handler(&self) -> MsgHandler {
-        self._msg_handler.clone()
+    pub fn msg_handler(&self) -> MsgHandler {
+        self.msg_handler.clone()
     }
 
     /// This function will create a temporary plugin process to fetch plugin information.
-    pub fn get_plug_info(binary_path: PathBuf) -> Result<PluginInfo, String> {
+    pub fn get_plugin_info(binary_path: PathBuf) -> Result<PluginInfo, String> {
         let mut child = Command::new(&binary_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -97,6 +98,7 @@ impl PluginProxy {
     }
 
     pub fn start_process(
+        runtime: Handle,
         plugin_state: PluginState,
         plugin_info: PluginInfo,
         service_handler: ServiceHandler,
@@ -127,7 +129,7 @@ impl PluginProxy {
 
         let plugin_name = plugin_info.name.clone();
         // this thread processes stdin information from host to plugin
-        let stdin_thread = thread::spawn(move || {
+        let stdin_thread = runtime.spawn(async move  {
             let handle_host_msg =
                 |stdin: &mut ChildStdin, (id, response)| -> Result<bool, String> {
                     let response_string =
@@ -213,7 +215,7 @@ impl PluginProxy {
         let plugin_name = plugin_info.name.clone();
         let msg_sender = host_msg_sender.clone();
         let mut buf_reader = BufReader::new(stdout);
-        let stdout_thread = thread::spawn(move || {
+        let stdout_thread = runtime.spawn(async move {
             let mut do_recv = || -> Result<bool, String> {
                 let mut content = String::new();
                 if buf_reader
@@ -284,7 +286,7 @@ impl PluginProxy {
             _info: plugin_info,
             _process: process,
             _request_handler: host_request_sender,
-            _msg_handler: host_msg_sender,
+            msg_handler: host_msg_sender,
         })
     }
 }
