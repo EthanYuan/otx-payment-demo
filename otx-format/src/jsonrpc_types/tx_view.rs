@@ -9,23 +9,12 @@ use ckb_types::constants::TX_VERSION;
 use ckb_types::core::TransactionBuilder;
 use ckb_types::prelude::{Entity, Pack};
 
-pub fn tx_view_to_otx(
-    tx_view: TransactionView,
-    otx_meta_version: u32,
-) -> Result<OpenTransaction, OtxFormatError> {
-    let open_tx_version: Uint32 = match otx_meta_version {
-        0 => otx_meta_version.into(),
-        _ => {
-            return Err(OtxFormatError::VersionNotSupported(
-                otx_meta_version.to_string(),
-            ))
-        }
-    };
+pub fn tx_view_to_otx(tx_view: TransactionView) -> Result<OpenTransaction, OtxFormatError> {
     let key_type: Uint32 = OTX_META_VERSION.into();
     let meta = vec![OtxKeyPair::new(
         key_type,
         None,
-        JsonBytes::from_bytes(open_tx_version.pack().as_bytes()),
+        JsonBytes::from_bytes(tx_view.inner.version.pack().as_bytes()),
     )];
 
     let cell_deps: Vec<OtxMap> = tx_view

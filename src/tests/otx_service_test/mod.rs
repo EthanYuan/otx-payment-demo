@@ -28,7 +28,7 @@ inventory::submit!(IntegrationTest {
 fn test_service_rpc_submit_otx() {
     let tx_info = alice_build_signed_otx().unwrap();
     let tx_view = tx_info.tx;
-    let otx = tx_view_to_otx(tx_view.clone(), 0).unwrap();
+    let otx = tx_view_to_otx(tx_view.clone()).unwrap();
     let otx: packed::OpenTransaction = otx.into();
 
     let service_client = ServiceRpcClient::new(SERVICE_URI.to_string());
