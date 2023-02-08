@@ -1429,8 +1429,6 @@ dependencies = [
  "core-rpc-types",
  "inventory",
  "otx-format",
- "otx-plugin-protocol",
- "otx-pool",
  "secp256k1 0.24.1",
  "serde",
  "serde_json",

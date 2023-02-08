@@ -1,2 +1,0 @@
-/// Meta Map Keys
-pub const OTX_VERSIONING_META_OPEN_TX_VERSION: u32 = 0x10000;

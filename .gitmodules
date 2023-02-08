@@ -2,3 +2,6 @@
 	path = mercury
 	url = https://github.com/EthanYuan/mercury.git
 
+[submodule "open-transaction-pool"]
+	path = open-transaction-pool
+	url = https://github.com/EthanYuan/open-transaction-pool.git

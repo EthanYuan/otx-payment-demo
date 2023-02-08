@@ -1,7 +1,7 @@
 mod otx_service_test;
 mod sdk_open_tx_examples;
 mod transfer_udt;
-mod user_case;
+mod user_case_payment;
 
 #[derive(Debug)]
 pub struct IntegrationTest {
