@@ -1,3 +1,7 @@
+## DEPRECATED
+
+NOTE: Further development of the open Transaction pool will continue in a new repo, please move to [open-transaction-pool](https://github.com/EthanYuan/open-transaction-pool).
+
 ## Run integration tests for the first time
 
 
