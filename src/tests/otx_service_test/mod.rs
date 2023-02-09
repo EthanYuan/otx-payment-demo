@@ -1,4 +1,4 @@
-use super::user_case_payment::alice_build_signed_otx;
+use super::user_case::alice_build_signed_otx;
 use crate::IntegrationTest;
 
 use ckb_types::prelude::Entity;

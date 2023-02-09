@@ -106,7 +106,7 @@ pub(crate) fn start_mercury(ckb: Child) -> (Child, Child) {
 pub(crate) fn start_service_payment(ckb: Child, mercury: Child) -> (Child, Child, Child) {
     let service = run_command_spawn(
         "cargo",
-        vec!["run", "--manifest-path", "open-transaction-pool/Cargo.toml"],
+        vec!["run", "--manifest-path", "otx-service/Cargo.toml"],
     );
     let service = if let Ok(service) = service {
         service
